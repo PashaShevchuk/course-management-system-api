@@ -8,7 +8,7 @@ feedback from instructors.
 
 - Docker installed locally. [Debian](https://docs.docker.com/engine/install/debian/)
   or [Ubuntu](https://docs.docker.com/engine/install/ubuntu/) or other distributive
-- Docker Compose installed locally. [installation link](https://docs.docker.com/compose/install/).
+- Docker Compose installed locally [installation link](https://docs.docker.com/compose/install/).
 
 ## Installation
 
