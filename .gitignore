@@ -21,3 +21,4 @@ lerna-debug.log*
 # IDEs and editors
 /.idea
 .env
+.ormconfig.json

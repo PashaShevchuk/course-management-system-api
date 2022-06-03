@@ -33,7 +33,7 @@ export class ConfigService {
 
     return {
       ...this.getBaseTypeOrmConfig(),
-      entities: ['dist/shared/db/entities/**/*.entity.js'],
+      entities: ['dist/db/entities/**/*.entity.js'],
     };
   }
 
@@ -48,14 +48,14 @@ export class ConfigService {
     return {
       type: 'postgres',
       host: this.getValue('POSTGRES_HOST'),
-      port: parseInt(this.getValue('POSTGRES_PORT')),
+      port: parseInt(this.getValue('POSTGRES_PORT'), 10),
       username: this.getValue('POSTGRES_USER'),
       password: this.getValue('POSTGRES_PASSWORD'),
       database: this.getValue('POSTGRES_DATABASE'),
       migrationsTableName: 'migration',
-      migrations: ['dist/migration/*.js'],
+      migrations: ['dist/db/migration/*.js'],
       cli: {
-        migrationsDir: 'src/migration',
+        migrationsDir: 'src/db/migration',
       },
       logging: this.isProduction() ? ['error'] : ['query', 'error'],
       synchronize: this.getValue('SYNCHRONIZE') === 'true',
