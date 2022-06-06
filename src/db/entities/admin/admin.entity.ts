@@ -1,11 +1,5 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  ManyToOne,
-  JoinColumn,
-} from 'typeorm';
-import { UserRole } from '../user-role/user-role.entity';
+import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { UserRoles } from '../../../constants';
 
 @Entity()
 export class Admin {
@@ -55,7 +49,6 @@ export class Admin {
   })
   updated_at: string;
 
-  @ManyToOne(() => UserRole)
-  @JoinColumn({ name: 'role' })
-  role: UserRole;
+  @Column({ type: 'enum', enum: UserRoles })
+  role: UserRoles;
 }

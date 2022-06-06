@@ -3,6 +3,8 @@ import { AppController } from './app.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from './config/config.module';
 import { ConfigService } from './config/config.service';
+import { AdminsModule } from './modules/admins/admins.module';
+import { AuthModule } from './modules/auth/auth.module';
 
 @Module({
   imports: [
@@ -13,6 +15,8 @@ import { ConfigService } from './config/config.service';
         return configService.getTypeOrmConfig();
       },
     }),
+    AdminsModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [],

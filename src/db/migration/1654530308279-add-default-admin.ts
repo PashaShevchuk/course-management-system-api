@@ -1,6 +1,6 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class addDefaultAdmin1654288003501 implements MigrationInterface {
+export class addDefaultAdmin1654530308279 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
         INSERT INTO admin(id, first_name, last_name, email, hash_password, is_active, role)
