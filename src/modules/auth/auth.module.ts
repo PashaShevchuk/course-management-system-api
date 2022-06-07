@@ -3,6 +3,8 @@ import { JwtModule } from '@nestjs/jwt';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { AdminsModule } from '../admins/admins.module';
+import { InstructorsModule } from '../instructors/instructors.module';
+import { RedisModule } from '../redis/redis.module';
 
 @Module({
   controllers: [AuthController],
@@ -11,10 +13,12 @@ import { AdminsModule } from '../admins/admins.module';
     JwtModule.register({
       privateKey: process.env.PRIVATE_KEY || 'SECRET',
       signOptions: {
-        expiresIn: process.env.AUTH_TOKEN_EXPIRED_TIME || '24h',
+        expiresIn: process.env.AUTH_TOKEN_EXPIRED_TIME || '12h',
       },
     }),
     forwardRef(() => AdminsModule),
+    forwardRef(() => InstructorsModule),
+    RedisModule,
   ],
   exports: [AuthService],
 })

@@ -1,7 +1,7 @@
 import { Expose } from 'class-transformer';
-import { UserRoles } from '../../../../constants';
+import { UserRoles } from '../../../constants';
 
-export class CreateAdminResponseDto {
+export class CreateInstructorResponseDto {
   @Expose()
   id: string;
 
@@ -13,6 +13,9 @@ export class CreateAdminResponseDto {
 
   @Expose()
   email: string;
+
+  @Expose()
+  position: string;
 
   @Expose()
   is_active: boolean;

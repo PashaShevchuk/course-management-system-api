@@ -5,6 +5,8 @@ import { ConfigModule } from './config/config.module';
 import { ConfigService } from './config/config.service';
 import { AdminsModule } from './modules/admins/admins.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { InstructorsModule } from './modules/instructors/instructors.module';
+import { RedisModule } from './modules/redis/redis.module';
 
 @Module({
   imports: [
@@ -17,6 +19,8 @@ import { AuthModule } from './modules/auth/auth.module';
     }),
     AdminsModule,
     AuthModule,
+    InstructorsModule,
+    RedisModule,
   ],
   controllers: [AppController],
   providers: [],

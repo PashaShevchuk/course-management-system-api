@@ -1,5 +1,6 @@
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { Injectable } from '@nestjs/common';
+import * as redisStore from 'cache-manager-redis-store';
 
 const REQUIRED_VARS = [
   'POSTGRES_HOST',
@@ -70,6 +71,16 @@ export class ConfigService {
     }
 
     return value;
+  }
+
+  public async getRedisConfig(): Promise<{ [key: string]: any }> {
+    return {
+      store: redisStore,
+      host: this.getValue('REDIS_HOST'),
+      port: parseInt(this.getValue('REDIS_PORT'), 10),
+      prefix: this.getValue('REDIS_PREFIX'),
+      ttl: parseInt(this.getValue('CACHE_TTL'), 10),
+    };
   }
 }
 

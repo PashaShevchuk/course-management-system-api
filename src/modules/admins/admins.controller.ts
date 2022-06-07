@@ -1,8 +1,8 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
-import { CreateAdminDto } from './dto/input/create-admin.dto';
+import { CreateAdminDto } from './dto/create-admin.dto';
 import { AdminsService } from './admins.service';
-import { CreateAdminResponseDto } from './dto/output/create-admin-response.dto';
+import { CreateAdminResponseDto } from './dto/create-admin-response.dto';
 
 @Controller('admins')
 export class AdminsController {

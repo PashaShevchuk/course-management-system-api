@@ -8,7 +8,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Admin } from '../../db/entities/admin/admin.entity';
 import { Repository } from 'typeorm';
-import { CreateAdminDto } from './dto/input/create-admin.dto';
+import { CreateAdminDto } from './dto/create-admin.dto';
 import { UserRoles } from '../../constants';
 import { AuthService } from '../auth/auth.service';
 
@@ -22,7 +22,7 @@ export class AdminsService {
   ) {}
 
   async createAdmin(createAdminDto: CreateAdminDto): Promise<Admin> {
-    const candidate = await this.getUserByParams({
+    const candidate = await this.getAdminByParams({
       email: createAdminDto.email,
     });
 
@@ -48,7 +48,7 @@ export class AdminsService {
     return admin;
   }
 
-  async getUserByParams(params: {
+  async getAdminByParams(params: {
     [key: string]: string;
   }): Promise<Admin | undefined> {
     return await this.adminRepository.findOne({ where: { ...params } });
