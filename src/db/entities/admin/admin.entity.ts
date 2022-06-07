@@ -1,5 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 import { UserRoles } from '../../../constants';
+import { Exclude } from 'class-transformer';
 
 @Entity()
 export class Admin {
@@ -25,6 +26,7 @@ export class Admin {
   })
   email: string;
 
+  @Exclude()
   @Column('varchar', {
     length: 150,
     nullable: false,

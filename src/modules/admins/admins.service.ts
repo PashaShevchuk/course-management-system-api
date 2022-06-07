@@ -53,4 +53,20 @@ export class AdminsService {
   }): Promise<Admin | undefined> {
     return await this.adminRepository.findOne({ where: { ...params } });
   }
+
+  async getAllAdmins(): Promise<Admin[]> {
+    const admins = await this.adminRepository.find();
+
+    return admins;
+  }
+
+  async getAdminById(id: string): Promise<Admin> {
+    const admin = await this.getAdminByParams({ id });
+
+    if (!admin) {
+      throw new HttpException('Data not found', HttpStatus.NOT_FOUND);
+    }
+
+    return admin;
+  }
 }

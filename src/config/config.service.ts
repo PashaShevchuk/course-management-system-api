@@ -63,6 +63,10 @@ export class ConfigService {
     };
   }
 
+  public getTokenPrivateKey(): string {
+    return this.getValue('PRIVATE_KEY');
+  }
+
   private getValue(key: string, throwOnMissing = true): string {
     const value = this.env[key];
 

@@ -5,6 +5,7 @@ import { AuthService } from './auth.service';
 import { AdminsModule } from '../admins/admins.module';
 import { InstructorsModule } from '../instructors/instructors.module';
 import { RedisModule } from '../redis/redis.module';
+import { ConfigModule } from '../../config/config.module';
 
 @Module({
   controllers: [AuthController],
@@ -19,7 +20,8 @@ import { RedisModule } from '../redis/redis.module';
     forwardRef(() => AdminsModule),
     forwardRef(() => InstructorsModule),
     RedisModule,
+    ConfigModule,
   ],
-  exports: [AuthService],
+  exports: [AuthService, JwtModule],
 })
 export class AuthModule {}
