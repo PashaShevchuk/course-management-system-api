@@ -3,6 +3,7 @@ import {
   ClassSerializerInterceptor,
   Controller,
   Get,
+  Logger,
   Param,
   Post,
   UseGuards,
@@ -19,15 +20,20 @@ import { RolesGuard } from '../auth/role.guard';
 @Controller('admins')
 @UseInterceptors(ClassSerializerInterceptor)
 export class AdminsController {
+  private LOGGER_PREFIX = '[AdminsController]:';
+  private logger = new Logger();
+
   constructor(private readonly adminsService: AdminsService) {}
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoles.ADMIN)
   @Post()
   async create(@Body() adminDto: CreateAdminDto): Promise<Admin> {
+    this.logger.log(`${this.LOGGER_PREFIX} create admin`);
     try {
       return this.adminsService.createAdmin(adminDto);
     } catch (err) {
+      this.logger.error(err);
       throw err;
     }
   }
@@ -36,9 +42,11 @@ export class AdminsController {
   @Roles(UserRoles.ADMIN)
   @Get()
   async getAll(): Promise<Admin[]> {
+    this.logger.log(`${this.LOGGER_PREFIX} get all admins`);
     try {
       return this.adminsService.getAllAdmins();
     } catch (err) {
+      this.logger.error(err);
       throw err;
     }
   }
@@ -47,9 +55,11 @@ export class AdminsController {
   @Roles(UserRoles.ADMIN)
   @Get(':id')
   async getOne(@Param('id') id: string): Promise<Admin> {
+    this.logger.log(`${this.LOGGER_PREFIX} get admin by ID`);
     try {
       return this.adminsService.getAdminById(id);
     } catch (err) {
+      this.logger.error(err);
       throw err;
     }
   }

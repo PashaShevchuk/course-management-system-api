@@ -4,6 +4,7 @@ import {
   HttpStatus,
   Inject,
   Injectable,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Admin } from '../../db/entities/admin/admin.entity';
@@ -14,6 +15,9 @@ import { AuthService } from '../auth/auth.service';
 
 @Injectable()
 export class AdminsService {
+  private LOGGER_PREFIX = '[AdminsService]:';
+  private logger = new Logger();
+
   constructor(
     @InjectRepository(Admin)
     private readonly adminRepository: Repository<Admin>,
@@ -22,6 +26,8 @@ export class AdminsService {
   ) {}
 
   async createAdmin(createAdminDto: CreateAdminDto): Promise<Admin> {
+    this.logger.log(`${this.LOGGER_PREFIX} create admin`);
+
     const candidate = await this.getAdminByParams({
       email: createAdminDto.email,
     });
@@ -51,16 +57,22 @@ export class AdminsService {
   async getAdminByParams(params: {
     [key: string]: string;
   }): Promise<Admin | undefined> {
+    this.logger.log(`${this.LOGGER_PREFIX} get admin by params`);
+
     return await this.adminRepository.findOne({ where: { ...params } });
   }
 
   async getAllAdmins(): Promise<Admin[]> {
+    this.logger.log(`${this.LOGGER_PREFIX} get all admins`);
+
     const admins = await this.adminRepository.find();
 
     return admins;
   }
 
   async getAdminById(id: string): Promise<Admin> {
+    this.logger.log(`${this.LOGGER_PREFIX} get admin by ID`);
+
     const admin = await this.getAdminByParams({ id });
 
     if (!admin) {

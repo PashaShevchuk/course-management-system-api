@@ -2,6 +2,7 @@ import {
   forwardRef,
   Inject,
   Injectable,
+  Logger,
   UnauthorizedException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
@@ -17,6 +18,8 @@ import { RedisService } from '../redis/redis.service';
 @Injectable()
 export class AuthService {
   private PASSWORD_HASH_ROUNDS = 10;
+  private LOGGER_PREFIX = '[AuthService]:';
+  private logger = new Logger();
 
   constructor(
     @Inject(forwardRef(() => AdminsService))
@@ -28,6 +31,8 @@ export class AuthService {
   ) {}
 
   async login(loginUserDto: LoginUserDto): Promise<LoginUserResponseDto> {
+    this.logger.log(`${this.LOGGER_PREFIX} user login`);
+
     const user = await this.validateUser(loginUserDto);
 
     return this.generateToken(user);

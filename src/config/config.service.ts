@@ -60,7 +60,7 @@ export class ConfigService {
       },
       logging: this.isProduction() ? ['error'] : ['query', 'error'],
       synchronize: this.getValue('SYNCHRONIZE') === 'true',
-    };
+    } as TypeOrmModuleOptions;
   }
 
   public getTokenPrivateKey(): string {
