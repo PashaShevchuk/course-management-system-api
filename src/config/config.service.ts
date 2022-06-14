@@ -1,6 +1,8 @@
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { Injectable } from '@nestjs/common';
 import * as redisStore from 'cache-manager-redis-store';
+import { join } from 'path';
+import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
 
 const REQUIRED_VARS = [
   'POSTGRES_HOST',
@@ -45,6 +47,25 @@ export class ConfigService {
     };
   }
 
+  public async getMailConfig() {
+    return {
+      transport: {
+        service: this.getValue('MAIL_SERVICE'),
+        auth: {
+          user: this.getValue('MAIL_USER'),
+          pass: this.getValue('MAIL_PASSWORD'),
+        },
+      },
+      template: {
+        dir: join(process.cwd(), 'dist', 'templates'),
+        adapter: new HandlebarsAdapter(),
+        options: {
+          strict: true,
+        },
+      },
+    };
+  }
+
   private getBaseTypeOrmConfig(): TypeOrmModuleOptions {
     return {
       type: 'postgres',
@@ -65,6 +86,10 @@ export class ConfigService {
 
   public getTokenPrivateKey(): string {
     return this.getValue('PRIVATE_KEY');
+  }
+
+  public isEmailEnable(): boolean {
+    return this.getValue('IS_EMAIL_ENABLED') === 'true';
   }
 
   private getValue(key: string, throwOnMissing = true): string {

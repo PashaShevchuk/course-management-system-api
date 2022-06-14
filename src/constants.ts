@@ -3,3 +3,7 @@ export enum UserRoles {
   INSTRUCTOR = 'instructor',
   STUDENT = 'student',
 }
+
+export enum EmailTemplates {
+  CHANGE_STATUS = 'change-status',
+}

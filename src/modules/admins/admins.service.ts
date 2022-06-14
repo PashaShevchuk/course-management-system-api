@@ -10,11 +10,13 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Admin } from '../../db/entities/admin/admin.entity';
 import { Repository } from 'typeorm';
 import { CreateAdminByAdminDto } from './dto/create-admin-by-admin.dto';
-import { UserRoles } from '../../constants';
+import { EmailTemplates, UserRoles } from '../../constants';
 import { AuthService } from '../auth/auth.service';
 import { UpdateAdminStatusDto } from './dto/update-admin-status.dto';
 import { CreateAdminDto } from './dto/create-admin.dto';
 import { UpdateAdminDto } from './dto/update-admin.dto';
+import { MailService } from '../mail/mail.service';
+import { ConfigService } from '../../config/config.service';
 
 @Injectable()
 export class AdminsService {
@@ -26,6 +28,8 @@ export class AdminsService {
     private readonly adminRepository: Repository<Admin>,
     @Inject(forwardRef(() => AuthService))
     private readonly authService: AuthService,
+    private readonly mailService: MailService,
+    private readonly configService: ConfigService,
   ) {}
 
   async createAdmin(createAdminDto: CreateAdminDto): Promise<string> {
@@ -127,6 +131,18 @@ export class AdminsService {
     });
     const admin = await this.getAdminById(adminId);
     await this.authService.declineToken(adminId);
+
+    if (statusDto.send_email && this.configService.isEmailEnable()) {
+      await this.mailService.sendMail(
+        admin.email,
+        EmailTemplates.CHANGE_STATUS,
+        'Account status',
+        {
+          name: `${admin.first_name} ${admin.last_name}`,
+          status: statusDto.is_active,
+        },
+      );
+    }
 
     return admin;
   }

@@ -5,4 +5,8 @@ export class UpdateAdminStatusDto {
   @ApiProperty()
   @IsNotEmpty()
   is_active: boolean;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  send_email: boolean;
 }

@@ -7,6 +7,8 @@ import { AdminsModule } from './modules/admins/admins.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { InstructorsModule } from './modules/instructors/instructors.module';
 import { RedisModule } from './modules/redis/redis.module';
+import { MailModule } from './modules/mail/mail.module';
+import { MailerModule } from '@nestjs-modules/mailer';
 
 @Module({
   imports: [
@@ -17,10 +19,18 @@ import { RedisModule } from './modules/redis/redis.module';
         return configService.getTypeOrmConfig();
       },
     }),
+    MailerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => {
+        return configService.getMailConfig();
+      },
+    }),
     AdminsModule,
     AuthModule,
     InstructorsModule,
     RedisModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [],
