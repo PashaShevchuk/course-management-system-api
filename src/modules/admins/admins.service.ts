@@ -9,10 +9,12 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Admin } from '../../db/entities/admin/admin.entity';
 import { Repository } from 'typeorm';
-import { CreateAdminDto } from './dto/create-admin.dto';
+import { CreateAdminByAdminDto } from './dto/create-admin-by-admin.dto';
 import { UserRoles } from '../../constants';
 import { AuthService } from '../auth/auth.service';
 import { UpdateAdminStatusDto } from './dto/update-admin-status.dto';
+import { CreateAdminDto } from './dto/create-admin.dto';
+import { UpdateAdminDto } from './dto/update-admin.dto';
 
 @Injectable()
 export class AdminsService {
@@ -26,7 +28,7 @@ export class AdminsService {
     private readonly authService: AuthService,
   ) {}
 
-  async createAdmin(createAdminDto: CreateAdminDto): Promise<Admin> {
+  async createAdmin(createAdminDto: CreateAdminDto): Promise<string> {
     this.logger.log(`${this.LOGGER_PREFIX} create admin`);
 
     const candidate = await this.getAdminByParams({
@@ -47,7 +49,38 @@ export class AdminsService {
     adminData.hash_password = await this.authService.hashPassword(
       createAdminDto.password,
     );
-    adminData.is_active = createAdminDto.is_active;
+    adminData.is_active = false;
+    adminData.role = UserRoles.ADMIN;
+
+    await this.adminRepository.save(adminData);
+
+    return 'The account data have been sent to the administrator for verification. After verification, you will receive an email.';
+  }
+
+  async createAdminByAdmin(
+    createAdminByAdminDto: CreateAdminByAdminDto,
+  ): Promise<Admin> {
+    this.logger.log(`${this.LOGGER_PREFIX} create admin by admin`);
+
+    const candidate = await this.getAdminByParams({
+      email: createAdminByAdminDto.email,
+    });
+
+    if (candidate) {
+      throw new HttpException(
+        'A user with this email already exists',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const adminData = new Admin();
+    adminData.first_name = createAdminByAdminDto.first_name;
+    adminData.last_name = createAdminByAdminDto.last_name;
+    adminData.email = createAdminByAdminDto.email;
+    adminData.hash_password = await this.authService.hashPassword(
+      createAdminByAdminDto.password,
+    );
+    adminData.is_active = createAdminByAdminDto.is_active;
     adminData.role = UserRoles.ADMIN;
 
     const admin = await this.adminRepository.save(adminData);
@@ -96,5 +129,38 @@ export class AdminsService {
     await this.authService.declineToken(adminId);
 
     return admin;
+  }
+
+  async updateAdmin(
+    adminId: string,
+    updateAdminDto: UpdateAdminDto,
+  ): Promise<Admin> {
+    this.logger.log(`${this.LOGGER_PREFIX} update admin`);
+
+    const admin = await this.getAdminById(adminId);
+
+    admin.first_name = updateAdminDto.first_name;
+    admin.last_name = updateAdminDto.last_name;
+
+    if (updateAdminDto.password) {
+      admin.hash_password = await this.authService.hashPassword(
+        updateAdminDto.password,
+      );
+      await this.authService.declineToken(adminId);
+    }
+
+    await this.adminRepository.save(admin);
+
+    return admin;
+  }
+
+  async deleteAdminById(id: string) {
+    this.logger.log(`${this.LOGGER_PREFIX} delete admin by ID`);
+
+    const result = await this.adminRepository.delete(id);
+
+    if (!result.affected) {
+      throw new HttpException('Data not found', HttpStatus.NOT_FOUND);
+    }
   }
 }

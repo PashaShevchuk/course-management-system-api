@@ -1,24 +1,29 @@
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 import { UserRoles } from '../../../constants';
 import { Exclude } from 'class-transformer';
+import { ApiProperty } from '@nestjs/swagger';
 
 @Entity()
 export class Admin {
+  @ApiProperty()
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @ApiProperty()
   @Column('varchar', {
     length: 100,
     nullable: false,
   })
   first_name: string;
 
+  @ApiProperty()
   @Column('varchar', {
     length: 100,
     nullable: false,
   })
   last_name: string;
 
+  @ApiProperty()
   @Column({
     unique: true,
     length: 255,
@@ -33,11 +38,13 @@ export class Admin {
   })
   hash_password: string;
 
+  @ApiProperty()
   @Column({
     nullable: false,
   })
   is_active: boolean;
 
+  @ApiProperty()
   @Column({
     type: 'timestamp',
     default: () => 'CURRENT_TIMESTAMP',
@@ -45,12 +52,14 @@ export class Admin {
   })
   created_at: string;
 
+  @ApiProperty()
   @Column({
     type: 'timestamp',
     default: () => 'CURRENT_TIMESTAMP',
   })
   updated_at: string;
 
+  @ApiProperty()
   @Column({ type: 'enum', enum: UserRoles })
   role: UserRoles;
 }

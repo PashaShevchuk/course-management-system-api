@@ -2,15 +2,17 @@ import {
   Body,
   ClassSerializerInterceptor,
   Controller,
+  Delete,
   Get,
   Logger,
   Param,
   Post,
   Put,
+  Req,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { CreateAdminDto } from './dto/create-admin.dto';
+import { CreateAdminByAdminDto } from './dto/create-admin-by-admin.dto';
 import { AdminsService } from './admins.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Admin } from '../../db/entities/admin/admin.entity';
@@ -18,7 +20,11 @@ import { Roles } from '../auth/role.decorator';
 import { UserRoles } from '../../constants';
 import { RolesGuard } from '../auth/role.guard';
 import { UpdateAdminStatusDto } from './dto/update-admin-status.dto';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { CreateAdminDto } from './dto/create-admin.dto';
+import { UpdateAdminDto } from './dto/update-admin.dto';
 
+@ApiTags('Admin')
 @Controller('admins')
 @UseInterceptors(ClassSerializerInterceptor)
 export class AdminsController {
@@ -27,11 +33,11 @@ export class AdminsController {
 
   constructor(private readonly adminsService: AdminsService) {}
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRoles.ADMIN)
-  @Post()
-  async create(@Body() adminDto: CreateAdminDto): Promise<Admin> {
-    this.logger.log(`${this.LOGGER_PREFIX} create admin`);
+  @ApiOperation({ summary: 'Registration' })
+  @ApiResponse({ type: 'string' })
+  @Post('registration')
+  async registration(@Body() adminDto: CreateAdminDto): Promise<string> {
+    this.logger.log(`${this.LOGGER_PREFIX} registration`);
     try {
       return this.adminsService.createAdmin(adminDto);
     } catch (err) {
@@ -40,11 +46,28 @@ export class AdminsController {
     }
   }
 
+  @ApiOperation({ summary: 'Create admin by admin' })
+  @ApiResponse({ type: Admin })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoles.ADMIN)
-  @Put(':userId/status')
+  @Post('create')
+  async createByAdmin(@Body() adminDto: CreateAdminByAdminDto): Promise<Admin> {
+    this.logger.log(`${this.LOGGER_PREFIX} create admin by admin`);
+    try {
+      return this.adminsService.createAdminByAdmin(adminDto);
+    } catch (err) {
+      this.logger.error(err);
+      throw err;
+    }
+  }
+
+  @ApiOperation({ summary: 'Update admin is_active status by ID' })
+  @ApiResponse({ type: Admin })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoles.ADMIN)
+  @Put(':id/status')
   async updateStatus(
-    @Param('userId') userId: string,
+    @Param('id') userId: string,
     @Body() statusDto: UpdateAdminStatusDto,
   ): Promise<Admin> {
     this.logger.log(`${this.LOGGER_PREFIX} update admin is_active status`);
@@ -56,6 +79,26 @@ export class AdminsController {
     }
   }
 
+  @ApiOperation({ summary: 'Update admin' })
+  @ApiResponse({ type: Admin })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoles.ADMIN)
+  @Put()
+  async update(
+    @Req() req,
+    @Body() updateAdminDto: UpdateAdminDto,
+  ): Promise<Admin> {
+    this.logger.log(`${this.LOGGER_PREFIX} update admin`);
+    try {
+      return this.adminsService.updateAdmin(req.user.id, updateAdminDto);
+    } catch (err) {
+      this.logger.error(err);
+      throw err;
+    }
+  }
+
+  @ApiOperation({ summary: 'Get all admins' })
+  @ApiResponse({ type: [Admin] })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoles.ADMIN)
   @Get()
@@ -69,6 +112,8 @@ export class AdminsController {
     }
   }
 
+  @ApiOperation({ summary: 'Get admin by ID' })
+  @ApiResponse({ type: Admin })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoles.ADMIN)
   @Get(':id')
@@ -76,6 +121,20 @@ export class AdminsController {
     this.logger.log(`${this.LOGGER_PREFIX} get admin by ID`);
     try {
       return this.adminsService.getAdminById(id);
+    } catch (err) {
+      this.logger.error(err);
+      throw err;
+    }
+  }
+
+  @ApiOperation({ summary: 'Delete admin by ID' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoles.ADMIN)
+  @Delete(':id')
+  async delete(@Param('id') id: string) {
+    this.logger.log(`${this.LOGGER_PREFIX} delete admin by ID`);
+    try {
+      return this.adminsService.deleteAdminById(id);
     } catch (err) {
       this.logger.error(err);
       throw err;

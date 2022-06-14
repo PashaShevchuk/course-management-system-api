@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const port = process.env.PORT || 3000;
@@ -16,6 +17,18 @@ async function bootstrap() {
   if (process.env.PREFIX_PATH) {
     app.setGlobalPrefix(process.env.PREFIX_PATH);
   }
+
+  const config = new DocumentBuilder()
+    .setTitle('Course Management System API')
+    .setDescription('The API description')
+    .setVersion('1.0.0')
+    .addBearerAuth()
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  const path = process.env.PREFIX_PATH
+    ? `${process.env.PREFIX_PATH}/docs`
+    : 'docs';
+  SwaggerModule.setup(path, app, document);
 
   app.useGlobalPipes(new ValidationPipe());
 
