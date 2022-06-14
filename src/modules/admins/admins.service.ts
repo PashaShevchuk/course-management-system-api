@@ -12,6 +12,7 @@ import { Repository } from 'typeorm';
 import { CreateAdminDto } from './dto/create-admin.dto';
 import { UserRoles } from '../../constants';
 import { AuthService } from '../auth/auth.service';
+import { UpdateAdminStatusDto } from './dto/update-admin-status.dto';
 
 @Injectable()
 export class AdminsService {
@@ -78,6 +79,21 @@ export class AdminsService {
     if (!admin) {
       throw new HttpException('Data not found', HttpStatus.NOT_FOUND);
     }
+
+    return admin;
+  }
+
+  async updateStatus(
+    adminId: string,
+    statusDto: UpdateAdminStatusDto,
+  ): Promise<Admin> {
+    this.logger.log(`${this.LOGGER_PREFIX} update admin is_active status`);
+
+    await this.adminRepository.update(adminId, {
+      is_active: statusDto.is_active,
+    });
+    const admin = await this.getAdminById(adminId);
+    await this.authService.declineToken(adminId);
 
     return admin;
   }

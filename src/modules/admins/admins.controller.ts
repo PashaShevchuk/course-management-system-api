@@ -6,6 +6,7 @@ import {
   Logger,
   Param,
   Post,
+  Put,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -16,6 +17,7 @@ import { Admin } from '../../db/entities/admin/admin.entity';
 import { Roles } from '../auth/role.decorator';
 import { UserRoles } from '../../constants';
 import { RolesGuard } from '../auth/role.guard';
+import { UpdateAdminStatusDto } from './dto/update-admin-status.dto';
 
 @Controller('admins')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -32,6 +34,22 @@ export class AdminsController {
     this.logger.log(`${this.LOGGER_PREFIX} create admin`);
     try {
       return this.adminsService.createAdmin(adminDto);
+    } catch (err) {
+      this.logger.error(err);
+      throw err;
+    }
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoles.ADMIN)
+  @Put(':userId/status')
+  async updateStatus(
+    @Param('userId') userId: string,
+    @Body() statusDto: UpdateAdminStatusDto,
+  ): Promise<Admin> {
+    this.logger.log(`${this.LOGGER_PREFIX} update admin is_active status`);
+    try {
+      return this.adminsService.updateStatus(userId, statusDto);
     } catch (err) {
       this.logger.error(err);
       throw err;

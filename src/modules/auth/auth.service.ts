@@ -14,6 +14,8 @@ import { LoginUserResponseDto } from './dto/login-user-response.dto';
 import { Instructor } from '../../db/entities/instructor/instructor.entity';
 import { InstructorsService } from '../instructors/instructors.service';
 import { RedisService } from '../redis/redis.service';
+import { DecodedTokenDto } from './dto/decoded-token.dto';
+import { ConfigService } from '../../config/config.service';
 
 @Injectable()
 export class AuthService {
@@ -28,18 +30,34 @@ export class AuthService {
     private readonly instructorsService: InstructorsService,
     private readonly jwtService: JwtService,
     private readonly redisService: RedisService,
+    private readonly configService: ConfigService,
   ) {}
 
   async login(loginUserDto: LoginUserDto): Promise<LoginUserResponseDto> {
     this.logger.log(`${this.LOGGER_PREFIX} user login`);
 
     const user = await this.validateUser(loginUserDto);
+    const token = this.generateToken(user);
 
-    return this.generateToken(user);
+    return token;
   }
 
   async hashPassword(password: string): Promise<string> {
     return bcrypt.hash(password, this.PASSWORD_HASH_ROUNDS);
+  }
+
+  decodeToken(token: string): DecodedTokenDto {
+    return <DecodedTokenDto>this.jwtService.decode(token);
+  }
+
+  verifyToken(token: string): DecodedTokenDto {
+    const tokenPrivateKey = this.configService.getTokenPrivateKey();
+
+    return this.jwtService.verify(token, { secret: tokenPrivateKey });
+  }
+
+  async declineToken(userId: string) {
+    await this.redisService.del(userId);
   }
 
   private async generateToken(user: Admin | Instructor) {

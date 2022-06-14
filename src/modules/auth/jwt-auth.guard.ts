@@ -4,35 +4,36 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { Observable } from 'rxjs';
-import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '../../config/config.service';
+import { AuthService } from './auth.service';
+import { RedisService } from '../redis/redis.service';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
   constructor(
-    private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly authService: AuthService,
+    private readonly redisService: RedisService,
   ) {}
 
-  canActivate(
-    context: ExecutionContext,
-  ): boolean | Promise<boolean> | Observable<boolean> {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const req = context.switchToHttp().getRequest();
 
     try {
       const authHeader = req.headers.authorization;
 
       const bearer = authHeader.split(' ')[0];
-      const token = authHeader.split(' ')[1];
+      const tokenFromHeader = authHeader.split(' ')[1];
 
-      const tokenPrivateKey = this.configService.getTokenPrivateKey();
+      const { id } = this.authService.decodeToken(tokenFromHeader);
 
-      if (bearer !== 'Bearer' || !token) {
+      const token = await this.redisService.get(id);
+
+      if (bearer !== 'Bearer' || !token || token !== tokenFromHeader) {
         throw new UnauthorizedException();
       }
 
-      req.user = this.jwtService.verify(token, { secret: tokenPrivateKey });
+      req.user = this.authService.verifyToken(token);
 
       return true;
     } catch (e) {

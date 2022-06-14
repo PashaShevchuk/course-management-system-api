@@ -5,12 +5,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Instructor } from '../../db/entities/instructor/instructor.entity';
 import { AuthModule } from '../auth/auth.module';
 import { ConfigModule } from '../../config/config.module';
+import { RedisModule } from '../redis/redis.module';
 
 @Module({
   imports: [
     forwardRef(() => AuthModule),
     TypeOrmModule.forFeature([Instructor]),
     ConfigModule,
+    RedisModule,
   ],
   controllers: [InstructorsController],
   providers: [InstructorsService],
