@@ -1,7 +1,7 @@
 import { IsEmail, IsNotEmpty, MinLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
-export class CreateInstructorDto {
+export class CreateInstructorByAdminDto {
   @ApiProperty()
   @IsNotEmpty()
   first_name: string;
@@ -23,4 +23,8 @@ export class CreateInstructorDto {
   @ApiProperty()
   @IsNotEmpty()
   position: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  is_active: boolean;
 }

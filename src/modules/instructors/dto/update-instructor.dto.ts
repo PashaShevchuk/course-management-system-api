@@ -1,7 +1,7 @@
-import { IsEmail, IsNotEmpty, MinLength } from 'class-validator';
+import { IsNotEmpty, IsOptional, MinLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
-export class CreateInstructorDto {
+export class UpdateInstructorDto {
   @ApiProperty()
   @IsNotEmpty()
   first_name: string;
@@ -12,15 +12,11 @@ export class CreateInstructorDto {
 
   @ApiProperty()
   @IsNotEmpty()
-  @IsEmail()
-  email: string;
+  position: string;
 
   @ApiProperty()
   @IsNotEmpty()
+  @IsOptional()
   @MinLength(8)
   password: string;
-
-  @ApiProperty()
-  @IsNotEmpty()
-  position: string;
 }
