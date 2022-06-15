@@ -52,6 +52,7 @@ export class InstructorsService {
     instructorData.first_name = createInstructorDto.first_name;
     instructorData.last_name = createInstructorDto.last_name;
     instructorData.email = createInstructorDto.email;
+    instructorData.position = createInstructorDto.position;
     instructorData.hash_password = await this.authService.hashPassword(
       createInstructorDto.password,
     );

@@ -30,7 +30,12 @@ async function bootstrap() {
     : 'docs';
   SwaggerModule.setup(path, app, document);
 
-  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+    }),
+  );
 
   await app.listen(port, () =>
     console.log(`The server is listening on the port ${port}`),
