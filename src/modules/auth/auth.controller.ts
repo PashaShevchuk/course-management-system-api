@@ -2,7 +2,9 @@ import { Body, Controller, Logger, Post } from '@nestjs/common';
 import { LoginUserDto } from './dto/login-user.dto';
 import { AuthService } from './auth.service';
 import { LoginUserResponseDto } from './dto/login-user-response.dto';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   private LOGGER_PREFIX = '[AuthController]:';
@@ -10,6 +12,8 @@ export class AuthController {
 
   constructor(private readonly authService: AuthService) {}
 
+  @ApiOperation({ summary: 'Log in' })
+  @ApiResponse({ type: LoginUserResponseDto })
   @Post('/login')
   async login(
     @Body() loginUserDto: LoginUserDto,
