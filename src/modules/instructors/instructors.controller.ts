@@ -23,6 +23,7 @@ import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CreateInstructorDto } from './dto/create-instructor.dto';
 import { UpdateInstructorStatusDto } from './dto/update-instructor-status.dto';
 import { UpdateInstructorDto } from './dto/update-instructor.dto';
+import { GetInstructorsByStatusDto } from './dto/get-instructors--by-status.dto';
 
 @ApiTags('Instructor')
 @Controller('instructors')
@@ -59,6 +60,25 @@ export class InstructorsController {
     this.logger.log(`${this.LOGGER_PREFIX} create instructor by admin`);
     try {
       return this.instructorsService.createInstructorByAdmin(instructorDto);
+    } catch (err) {
+      this.logger.error(err);
+      throw err;
+    }
+  }
+
+  @ApiOperation({ summary: 'Get instructors by status' })
+  @ApiResponse({ type: [Instructor] })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoles.ADMIN)
+  @Post()
+  async getInstructorsByStatus(
+    @Body() getInstructorsByStatusDto: GetInstructorsByStatusDto,
+  ): Promise<Instructor[]> {
+    this.logger.log(`${this.LOGGER_PREFIX} get instructors by status`);
+    try {
+      return this.instructorsService.getInstructorsByParams({
+        is_active: getInstructorsByStatusDto.is_active,
+      });
     } catch (err) {
       this.logger.error(err);
       throw err;

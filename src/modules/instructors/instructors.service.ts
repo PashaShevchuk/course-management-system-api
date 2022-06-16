@@ -65,11 +65,19 @@ export class InstructorsService {
   }
 
   async getInstructorByParams(params: {
-    [key: string]: string;
+    [key: string]: any;
   }): Promise<Instructor | undefined> {
     this.logger.log(`${this.LOGGER_PREFIX} get instructor by params`);
 
     return await this.instructorRepository.findOne({ where: { ...params } });
+  }
+
+  async getInstructorsByParams(params: {
+    [key: string]: any;
+  }): Promise<Instructor[]> {
+    this.logger.log(`${this.LOGGER_PREFIX} get instructors by params`);
+
+    return await this.instructorRepository.find({ where: { ...params } });
   }
 
   async createInstructor(
@@ -144,12 +152,12 @@ export class InstructorsService {
   }
 
   async updateInstructor(
-    adminId: string,
+    userId: string,
     updateInstructorDto: UpdateInstructorDto,
   ): Promise<Instructor> {
     this.logger.log(`${this.LOGGER_PREFIX} update instructor`);
 
-    const instructor = await this.getInstructorById(adminId);
+    const instructor = await this.getInstructorById(userId);
 
     instructor.first_name = updateInstructorDto.first_name;
     instructor.last_name = updateInstructorDto.last_name;
@@ -159,7 +167,7 @@ export class InstructorsService {
       instructor.hash_password = await this.authService.hashPassword(
         updateInstructorDto.password,
       );
-      await this.authService.declineToken(adminId);
+      await this.authService.declineToken(userId);
     }
 
     await this.instructorRepository.save(instructor);
@@ -168,7 +176,7 @@ export class InstructorsService {
   }
 
   async getAllInstructors(): Promise<Instructor[]> {
-    this.logger.log(`${this.LOGGER_PREFIX} get all admins`);
+    this.logger.log(`${this.LOGGER_PREFIX} get all instructors`);
 
     const instructors = await this.instructorRepository.find();
 

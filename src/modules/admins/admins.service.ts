@@ -93,11 +93,17 @@ export class AdminsService {
   }
 
   async getAdminByParams(params: {
-    [key: string]: string;
+    [key: string]: any;
   }): Promise<Admin | undefined> {
     this.logger.log(`${this.LOGGER_PREFIX} get admin by params`);
 
     return await this.adminRepository.findOne({ where: { ...params } });
+  }
+
+  async getAdminsByParams(params: { [key: string]: any }): Promise<Admin[]> {
+    this.logger.log(`${this.LOGGER_PREFIX} get admins by params`);
+
+    return await this.adminRepository.find({ where: { ...params } });
   }
 
   async getAllAdmins(): Promise<Admin[]> {

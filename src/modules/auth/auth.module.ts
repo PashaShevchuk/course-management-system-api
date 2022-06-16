@@ -6,6 +6,7 @@ import { AdminsModule } from '../admins/admins.module';
 import { InstructorsModule } from '../instructors/instructors.module';
 import { RedisModule } from '../redis/redis.module';
 import { ConfigModule } from '../../config/config.module';
+import { StudentsModule } from '../students/students.module';
 
 @Module({
   controllers: [AuthController],
@@ -19,6 +20,7 @@ import { ConfigModule } from '../../config/config.module';
     }),
     forwardRef(() => AdminsModule),
     forwardRef(() => InstructorsModule),
+    forwardRef(() => StudentsModule),
     RedisModule,
     ConfigModule,
   ],

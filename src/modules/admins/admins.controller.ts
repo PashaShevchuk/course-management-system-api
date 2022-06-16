@@ -23,6 +23,7 @@ import { UpdateAdminStatusDto } from './dto/update-admin-status.dto';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CreateAdminDto } from './dto/create-admin.dto';
 import { UpdateAdminDto } from './dto/update-admin.dto';
+import { GetAdminsByStatusDto } from './dto/get-admins--by-status.dto';
 
 @ApiTags('Admin')
 @Controller('admins')
@@ -55,6 +56,25 @@ export class AdminsController {
     this.logger.log(`${this.LOGGER_PREFIX} create admin by admin`);
     try {
       return this.adminsService.createAdminByAdmin(adminDto);
+    } catch (err) {
+      this.logger.error(err);
+      throw err;
+    }
+  }
+
+  @ApiOperation({ summary: 'Get admins by status' })
+  @ApiResponse({ type: [Admin] })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoles.ADMIN)
+  @Post()
+  async getAdminsByStatus(
+    @Body() getAdminsByStatusDto: GetAdminsByStatusDto,
+  ): Promise<Admin[]> {
+    this.logger.log(`${this.LOGGER_PREFIX} get admins by status`);
+    try {
+      return this.adminsService.getAdminsByParams({
+        is_active: getAdminsByStatusDto.is_active,
+      });
     } catch (err) {
       this.logger.error(err);
       throw err;

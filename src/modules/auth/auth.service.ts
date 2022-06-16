@@ -16,6 +16,8 @@ import { InstructorsService } from '../instructors/instructors.service';
 import { RedisService } from '../redis/redis.service';
 import { DecodedTokenDto } from './dto/decoded-token.dto';
 import { ConfigService } from '../../config/config.service';
+import { StudentsService } from '../students/students.service';
+import { Student } from '../../db/entities/student/student.entity';
 
 @Injectable()
 export class AuthService {
@@ -31,6 +33,8 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly redisService: RedisService,
     private readonly configService: ConfigService,
+    @Inject(forwardRef(() => StudentsService))
+    private readonly studentsService: StudentsService,
   ) {}
 
   async login(loginUserDto: LoginUserDto): Promise<LoginUserResponseDto> {
@@ -60,7 +64,7 @@ export class AuthService {
     await this.redisService.del(userId);
   }
 
-  private async generateToken(user: Admin | Instructor) {
+  private async generateToken(user: Admin | Instructor | Student) {
     const payload = {
       id: user.id,
       email: user.email,
@@ -78,23 +82,22 @@ export class AuthService {
 
   private async validateUser(
     loginUserDto: LoginUserDto,
-  ): Promise<Admin | Instructor> {
+  ): Promise<Admin | Student | Instructor> {
     let user = await this.adminsService.getAdminByParams({
       email: loginUserDto.email,
     });
+
+    if (!user) {
+      user = await this.studentsService.getStudentByParams({
+        email: loginUserDto.email,
+      });
+    }
 
     if (!user) {
       user = await this.instructorsService.getInstructorByParams({
         email: loginUserDto.email,
       });
     }
-
-    // TODO: student
-    // if (!user) {
-    //   user = await this.instructorsService.getInstructorByParams({
-    //     email: loginUserDto.email,
-    //   });
-    // }
 
     if (!user || !user.is_active) {
       throw new UnauthorizedException();
