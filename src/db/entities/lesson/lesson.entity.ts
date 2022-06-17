@@ -1,15 +1,9 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  Index,
-  OneToMany,
-} from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
-import { Lesson } from '../lesson/lesson.entity';
+import { Course } from '../course/course.entity';
 
 @Entity()
-export class Course {
+export class Lesson {
   @ApiProperty()
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -29,11 +23,13 @@ export class Course {
   description: string;
 
   @ApiProperty()
-  @Index()
-  @Column({
+  @Column('int', {
     nullable: false,
   })
-  is_published: boolean;
+  highest_mark: number;
+
+  @ManyToOne(() => Course, (course) => course.lessons)
+  course: Course;
 
   @ApiProperty()
   @Column({
@@ -49,7 +45,4 @@ export class Course {
     default: () => 'CURRENT_TIMESTAMP',
   })
   updated_at: string;
-
-  @OneToMany(() => Lesson, (lesson) => lesson.course)
-  lessons: Lesson[];
 }
