@@ -1,38 +1,32 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
+import {
+  Entity,
+  Column,
+  ManyToOne,
+  Index,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { Course } from '../course/course.entity';
+import { Instructor } from '../instructor/instructor.entity';
 
 @Entity()
-export class Lesson {
+@Index(['course', 'instructor'], { unique: true })
+export class InstructorCourse {
   @ApiProperty()
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @ApiProperty()
-  @Column('varchar', {
-    length: 255,
-    nullable: false,
-  })
-  title: string;
-
-  @ApiProperty()
-  @Column('varchar', {
-    length: 1000,
-    nullable: false,
-  })
-  description: string;
-
-  @ApiProperty()
-  @Column('int', {
-    nullable: false,
-  })
-  highest_mark: number;
-
-  @ApiProperty()
-  @ManyToOne(() => Course, (course) => course.lessons, {
+  @ManyToOne(() => Course, (course) => course.instructorCourses, {
     onDelete: 'CASCADE',
   })
   course: Course;
+
+  @ApiProperty()
+  @ManyToOne(() => Instructor, (instructor) => instructor.instructorCourses, {
+    onDelete: 'CASCADE',
+  })
+  instructor: Instructor;
 
   @ApiProperty()
   @Column({

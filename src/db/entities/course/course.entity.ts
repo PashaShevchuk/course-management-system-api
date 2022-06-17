@@ -7,6 +7,7 @@ import {
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { Lesson } from '../lesson/lesson.entity';
+import { InstructorCourse } from '../instructor-course/instructor-course.entity';
 
 @Entity()
 export class Course {
@@ -52,4 +53,11 @@ export class Course {
 
   @OneToMany(() => Lesson, (lesson) => lesson.course)
   lessons: Lesson[];
+
+  @ApiProperty()
+  @OneToMany(
+    () => InstructorCourse,
+    (instructorCourse) => instructorCourse.course,
+  )
+  instructorCourses: InstructorCourse[];
 }

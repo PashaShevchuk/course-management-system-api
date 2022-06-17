@@ -1,7 +1,8 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
 import { UserRoles } from '../../../constants';
 import { Exclude } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
+import { InstructorCourse } from '../instructor-course/instructor-course.entity';
 
 @Entity()
 export class Instructor {
@@ -69,4 +70,11 @@ export class Instructor {
     default: () => 'CURRENT_TIMESTAMP',
   })
   updated_at: string;
+
+  @ApiProperty()
+  @OneToMany(
+    () => InstructorCourse,
+    (instructorCourse) => instructorCourse.instructor,
+  )
+  instructorCourses: InstructorCourse[];
 }
