@@ -28,7 +28,9 @@ export class Lesson {
   })
   highest_mark: number;
 
-  @ManyToOne(() => Course, (course) => course.lessons)
+  @ManyToOne(() => Course, (course) => course.lessons, {
+    onDelete: 'CASCADE',
+  })
   course: Course;
 
   @ApiProperty()
