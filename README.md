@@ -37,7 +37,7 @@ $ npm install
 # development first run
 $ docker-compose up
 $ npm run start
-$ npm run typeorm:migration:clean:run 
+$ npm run migration:run 
 
 # next runs
 $ npm run start:dev
@@ -47,6 +47,10 @@ $ npm run start:dev
 
 # production mode
 $ npm run start:prod
+
+# create, generate migration
+$ npm run migration:create --name=foo
+$ npm run migration:generate --name=bar
 ```
 
 ## Test

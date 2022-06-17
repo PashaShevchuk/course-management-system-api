@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common';
 import * as redisStore from 'cache-manager-redis-store';
 import { join } from 'path';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
+import { DataSourceOptions } from 'typeorm';
 
 const REQUIRED_VARS = [
   'POSTGRES_HOST',
@@ -31,7 +32,7 @@ export class ConfigService {
     return mode === 'production';
   }
 
-  public async getTypeOrmConfig(): Promise<TypeOrmModuleOptions> {
+  public getTypeOrmConfig(): DataSourceOptions {
     this.ensureValues(REQUIRED_VARS);
 
     return {
@@ -66,7 +67,7 @@ export class ConfigService {
     };
   }
 
-  private getBaseTypeOrmConfig(): TypeOrmModuleOptions {
+  private getBaseTypeOrmConfig(): DataSourceOptions {
     return {
       type: 'postgres',
       host: this.getValue('POSTGRES_HOST'),
@@ -76,12 +77,9 @@ export class ConfigService {
       database: this.getValue('POSTGRES_DATABASE'),
       migrationsTableName: 'migration',
       migrations: ['dist/db/migration/*.js'],
-      cli: {
-        migrationsDir: 'src/db/migration',
-      },
       logging: this.isProduction() ? ['error'] : ['query', 'error'],
       synchronize: this.getValue('SYNCHRONIZE') === 'true',
-    } as TypeOrmModuleOptions;
+    };
   }
 
   public getTokenPrivateKey(): string {
