@@ -10,6 +10,7 @@ import { RedisModule } from './modules/redis/redis.module';
 import { MailModule } from './modules/mail/mail.module';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { StudentsModule } from './modules/students/students.module';
+import { CoursesModule } from './modules/courses/courses.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { StudentsModule } from './modules/students/students.module';
     RedisModule,
     MailModule,
     StudentsModule,
+    CoursesModule,
   ],
   controllers: [AppController],
   providers: [],
