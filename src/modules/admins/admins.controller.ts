@@ -62,7 +62,7 @@ export class AdminsController {
     }
   }
 
-  @ApiOperation({ summary: 'Get admins by status' })
+  @ApiOperation({ summary: 'Get admins by status (only for admin)' })
   @ApiResponse({ type: [Admin] })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoles.ADMIN)
@@ -81,7 +81,9 @@ export class AdminsController {
     }
   }
 
-  @ApiOperation({ summary: 'Update admin is_active status by ID' })
+  @ApiOperation({
+    summary: 'Update admin is_active status by ID (only for admin)',
+  })
   @ApiResponse({ type: Admin })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoles.ADMIN)
@@ -117,7 +119,7 @@ export class AdminsController {
     }
   }
 
-  @ApiOperation({ summary: 'Get all admins' })
+  @ApiOperation({ summary: 'Get all admins (only for admin)' })
   @ApiResponse({ type: [Admin] })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoles.ADMIN)
@@ -132,7 +134,7 @@ export class AdminsController {
     }
   }
 
-  @ApiOperation({ summary: 'Get admin by ID' })
+  @ApiOperation({ summary: 'Get admin by ID (only for admin)' })
   @ApiResponse({ type: Admin })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoles.ADMIN)
@@ -147,7 +149,7 @@ export class AdminsController {
     }
   }
 
-  @ApiOperation({ summary: 'Delete admin by ID' })
+  @ApiOperation({ summary: 'Delete admin by ID (only for admin)' })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoles.ADMIN)
   @Delete(':id')

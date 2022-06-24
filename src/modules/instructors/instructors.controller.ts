@@ -66,7 +66,7 @@ export class InstructorsController {
     }
   }
 
-  @ApiOperation({ summary: 'Get instructors by status' })
+  @ApiOperation({ summary: 'Get instructors by status (only for admin)' })
   @ApiResponse({ type: [Instructor] })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoles.ADMIN)
@@ -85,7 +85,9 @@ export class InstructorsController {
     }
   }
 
-  @ApiOperation({ summary: 'Update instructor is_active status by ID' })
+  @ApiOperation({
+    summary: 'Update instructor is_active status by ID (only for admin)',
+  })
   @ApiResponse({ type: Instructor })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoles.ADMIN)
@@ -124,7 +126,7 @@ export class InstructorsController {
     }
   }
 
-  @ApiOperation({ summary: 'Get all instructors' })
+  @ApiOperation({ summary: 'Get all instructors (only for admin)' })
   @ApiResponse({ type: [Instructor] })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoles.ADMIN)
@@ -169,7 +171,7 @@ export class InstructorsController {
     }
   }
 
-  @ApiOperation({ summary: 'Delete instructor by ID' })
+  @ApiOperation({ summary: 'Delete instructor by ID (only for admin)' })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoles.ADMIN)
   @Delete(':id')

@@ -7,6 +7,7 @@ import { Lesson } from '../../db/entities/lesson/lesson.entity';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { AssignInstructorDto } from './dto/assign-instructor.dto';
 import { InstructorsService } from '../instructors/instructors.service';
+import { GetCoursesByParamsDto } from './dto/get-courses-by-params.dto';
 
 @Injectable()
 export class CoursesService {
@@ -115,20 +116,40 @@ export class CoursesService {
     return course;
   }
 
-  async assignInstructor(
-    assignInstructorDto: AssignInstructorDto,
-  ): Promise<Course> {
+  async assignInstructor(assignInstructorDto: AssignInstructorDto) {
     this.logger.log(`${this.LOGGER_PREFIX} assign instructor for course`);
 
-    const course = await this.getCourseById(assignInstructorDto.courseId);
-    const instructor = await this.instructorsService.getInstructorById(
-      assignInstructorDto.instructorId,
-    );
+    try {
+      const course = await this.getCourseById(assignInstructorDto.courseId);
+      const instructor = await this.instructorsService.getInstructorById(
+        assignInstructorDto.instructorId,
+      );
 
-    // TODO
+      await this.instructorCourseRepository.save({ course, instructor });
+    } catch (err) {
+      if (err.code === '23505') {
+        throw new HttpException(
+          'This user is already assigned to this company',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+      throw err;
+    }
+  }
 
-    await this.courseRepository.save(course);
+  async getCoursesByParams(params: GetCoursesByParamsDto): Promise<Course[]> {
+    this.logger.log(`${this.LOGGER_PREFIX} get courses by params`);
 
-    return course;
+    return await this.courseRepository.find({ where: { ...params } });
+  }
+
+  async deleteCourseById(id: string) {
+    this.logger.log(`${this.LOGGER_PREFIX} delete course by ID`);
+
+    const result = await this.courseRepository.delete(id);
+
+    if (!result.affected) {
+      throw new HttpException('Data not found', HttpStatus.NOT_FOUND);
+    }
   }
 }

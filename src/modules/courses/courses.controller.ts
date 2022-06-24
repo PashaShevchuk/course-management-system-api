@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Logger,
   Param,
@@ -17,6 +18,7 @@ import { UserRoles } from '../../constants';
 import { Course } from '../../db/entities/course/course.entity';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { AssignInstructorDto } from './dto/assign-instructor.dto';
+import { GetCoursesByStatusDto } from './dto/get-courses-by-status.dto';
 
 @ApiTags('Course')
 @Controller('courses')
@@ -27,16 +29,32 @@ export class CoursesController {
   constructor(private readonly coursesService: CoursesService) {}
 
   @ApiOperation({ summary: 'Assign instructor for course (only for admin)' })
-  @ApiResponse({ type: Course })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoles.ADMIN)
   @Post('assign-instructor')
-  async assignInstructor(
-    @Body() assignInstructorDto: AssignInstructorDto,
-  ): Promise<Course> {
+  async assignInstructor(@Body() assignInstructorDto: AssignInstructorDto) {
     this.logger.log(`${this.LOGGER_PREFIX} assign instructor for course`);
     try {
       return this.coursesService.assignInstructor(assignInstructorDto);
+    } catch (err) {
+      this.logger.error(err);
+      throw err;
+    }
+  }
+
+  @ApiOperation({ summary: 'Get courses by status (only for admin)' })
+  @ApiResponse({ type: [Course] })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoles.ADMIN)
+  @Post()
+  async getCoursesByStatus(
+    @Body() getCoursesByStatusDto: GetCoursesByStatusDto,
+  ): Promise<Course[]> {
+    this.logger.log(`${this.LOGGER_PREFIX} get courses by status`);
+    try {
+      return this.coursesService.getCoursesByParams({
+        is_published: getCoursesByStatusDto.is_published,
+      });
     } catch (err) {
       this.logger.error(err);
       throw err;
@@ -47,7 +65,7 @@ export class CoursesController {
   @ApiResponse({ type: Course })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoles.ADMIN)
-  @Post()
+  @Post('create')
   async create(@Body() createCourseDto: CreateCourseDto): Promise<Course> {
     this.logger.log(`${this.LOGGER_PREFIX} create course`);
     try {
@@ -100,6 +118,20 @@ export class CoursesController {
     this.logger.log(`${this.LOGGER_PREFIX} get all published courses`);
     try {
       return this.coursesService.getAllCourses();
+    } catch (err) {
+      this.logger.error(err);
+      throw err;
+    }
+  }
+
+  @ApiOperation({ summary: 'Delete course by ID (only for admin)' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoles.ADMIN)
+  @Delete(':id')
+  async delete(@Param('id') courseId: string) {
+    this.logger.log(`${this.LOGGER_PREFIX} delete course by ID`);
+    try {
+      return this.coursesService.deleteCourseById(courseId);
     } catch (err) {
       this.logger.error(err);
       throw err;
