@@ -19,6 +19,7 @@ import { Course } from '../../db/entities/course/course.entity';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { AssignInstructorDto } from './dto/assign-instructor.dto';
 import { GetCoursesByStatusDto } from './dto/get-courses-by-status.dto';
+import { courseLessonsExample } from './dto/course-lessons-example';
 
 @ApiTags('Course')
 @Controller('courses')
@@ -103,6 +104,21 @@ export class CoursesController {
     this.logger.log(`${this.LOGGER_PREFIX} publish course`);
     try {
       return this.coursesService.publishCourse(courseId);
+    } catch (err) {
+      this.logger.error(err);
+      throw err;
+    }
+  }
+
+  @ApiOperation({ summary: 'Get course lessons' })
+  @ApiResponse({ schema: { example: courseLessonsExample } })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoles.ADMIN, UserRoles.INSTRUCTOR, UserRoles.STUDENT)
+  @Get(':id/lessons')
+  async getCourseLessons(@Param('id') courseId: string): Promise<Course> {
+    this.logger.log(`${this.LOGGER_PREFIX} get course lessons`);
+    try {
+      return this.coursesService.getCourseLessons(courseId);
     } catch (err) {
       this.logger.error(err);
       throw err;

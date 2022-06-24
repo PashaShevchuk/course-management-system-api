@@ -70,7 +70,6 @@ export class Student {
   })
   updated_at: string;
 
-  @ApiProperty()
   @OneToMany(() => StudentCourse, (studentCourse) => studentCourse.student)
   studentCourses: StudentCourse[];
 }

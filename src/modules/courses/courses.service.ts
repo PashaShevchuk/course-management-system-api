@@ -152,4 +152,19 @@ export class CoursesService {
       throw new HttpException('Data not found', HttpStatus.NOT_FOUND);
     }
   }
+
+  async getCourseLessons(id: string) {
+    this.logger.log(`${this.LOGGER_PREFIX} get course lessons`);
+
+    const course = await this.courseRepository.findOne({
+      where: { id },
+      relations: { lessons: true },
+    });
+
+    if (!course) {
+      throw new HttpException('Data not found', HttpStatus.NOT_FOUND);
+    }
+
+    return course;
+  }
 }

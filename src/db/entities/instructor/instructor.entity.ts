@@ -71,7 +71,6 @@ export class Instructor {
   })
   updated_at: string;
 
-  @ApiProperty()
   @OneToMany(
     () => InstructorCourse,
     (instructorCourse) => instructorCourse.instructor,

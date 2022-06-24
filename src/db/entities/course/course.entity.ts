@@ -55,14 +55,12 @@ export class Course {
   @OneToMany(() => Lesson, (lesson) => lesson.course)
   lessons: Lesson[];
 
-  @ApiProperty()
   @OneToMany(
     () => InstructorCourse,
     (instructorCourse) => instructorCourse.course,
   )
   instructorCourses: InstructorCourse[];
 
-  @ApiProperty()
   @OneToMany(() => StudentCourse, (studentCourse) => studentCourse.course)
   studentCourses: StudentCourse[];
 }
