@@ -24,6 +24,7 @@ import { CreateStudentDto } from './dto/create-student.dto';
 import { UpdateStudentStatusDto } from './dto/update-student-status.dto';
 import { UpdateStudentDto } from './dto/update-student.dto';
 import { GetStudentsByStatusDto } from './dto/get-students--by-status.dto';
+import { TakeCourseDto } from './dto/take-course.dto';
 
 @ApiTags('Student')
 @Controller('students')
@@ -60,6 +61,23 @@ export class StudentsController {
     this.logger.log(`${this.LOGGER_PREFIX} create student by admin`);
     try {
       return this.studentsService.createStudentByAdmin(createStudentByAdminDto);
+    } catch (err) {
+      this.logger.error(err);
+      throw err;
+    }
+  }
+
+  @ApiOperation({ summary: 'Take a course (only for student)' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoles.STUDENT)
+  @Post('take-course')
+  async takeCourse(@Req() req, @Body() takeCourseDto: TakeCourseDto) {
+    this.logger.log(`${this.LOGGER_PREFIX} take a course`);
+    try {
+      return this.studentsService.takeCourse(
+        req.user.id,
+        takeCourseDto.course_id,
+      );
     } catch (err) {
       this.logger.error(err);
       throw err;

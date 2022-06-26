@@ -7,10 +7,11 @@ import { RedisModule } from '../redis/redis.module';
 import { MailModule } from '../mail/mail.module';
 import { StudentsController } from './students.controller';
 import { Student } from '../../db/entities/student/student.entity';
+import { StudentCourse } from '../../db/entities/student-course/student-course.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Student]),
+    TypeOrmModule.forFeature([Student, StudentCourse]),
     forwardRef(() => AuthModule),
     ConfigModule,
     RedisModule,

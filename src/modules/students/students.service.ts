@@ -17,6 +17,7 @@ import { CreateStudentByAdminDto } from './dto/create-student-by-admin.dto';
 import { CreateStudentDto } from './dto/create-student.dto';
 import { UpdateStudentStatusDto } from './dto/update-student-status.dto';
 import { UpdateStudentDto } from './dto/update-student.dto';
+import { StudentCourse } from '../../db/entities/student-course/student-course.entity';
 
 @Injectable()
 export class StudentsService {
@@ -26,6 +27,8 @@ export class StudentsService {
   constructor(
     @InjectRepository(Student)
     private readonly studentRepository: Repository<Student>,
+    @InjectRepository(StudentCourse)
+    private readonly studentCourseRepository: Repository<StudentCourse>,
     @Inject(forwardRef(() => AuthService))
     private readonly authService: AuthService,
     private readonly configService: ConfigService,
@@ -199,6 +202,41 @@ export class StudentsService {
 
     if (!result.affected) {
       throw new HttpException('Data not found', HttpStatus.NOT_FOUND);
+    }
+  }
+
+  async takeCourse(studentId: string, courseId: string) {
+    this.logger.log(`${this.LOGGER_PREFIX} take a course`);
+
+    try {
+      const studentCourses = await this.studentCourseRepository.findAndCount({
+        where: { student: { id: studentId } },
+      });
+
+      if (studentCourses[1] > 5) {
+        throw new HttpException(
+          'You cannot attend more than 5 courses at the same time',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      await this.studentCourseRepository.save({
+        student: { id: studentId },
+        course: { id: courseId },
+      });
+    } catch (err) {
+      if (err.code === '23505') {
+        throw new HttpException(
+          'You have already taken this course',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      if (err.code === '23503') {
+        throw new HttpException('Course not found', HttpStatus.BAD_REQUEST);
+      }
+
+      throw err;
     }
   }
 }

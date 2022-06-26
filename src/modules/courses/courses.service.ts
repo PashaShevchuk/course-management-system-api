@@ -133,6 +133,7 @@ export class CoursesService {
           HttpStatus.BAD_REQUEST,
         );
       }
+
       throw err;
     }
   }

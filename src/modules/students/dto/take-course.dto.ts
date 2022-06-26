@@ -1,14 +1,9 @@
 import { IsNotEmpty, IsUUID } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
-export class AssignInstructorDto {
+export class TakeCourseDto {
   @ApiProperty()
   @IsNotEmpty()
   @IsUUID()
-  courseId: string;
-
-  @ApiProperty()
-  @IsNotEmpty()
-  @IsUUID()
-  instructorId: string;
+  course_id: string;
 }
