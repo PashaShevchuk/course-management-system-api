@@ -18,6 +18,7 @@ import { CreateStudentDto } from './dto/create-student.dto';
 import { UpdateStudentStatusDto } from './dto/update-student-status.dto';
 import { UpdateStudentDto } from './dto/update-student.dto';
 import { StudentCourse } from '../../db/entities/student-course/student-course.entity';
+import { Course } from '../../db/entities/course/course.entity';
 
 @Injectable()
 export class StudentsService {
@@ -238,5 +239,18 @@ export class StudentsService {
 
       throw err;
     }
+  }
+
+  async getStudentCourses(studentId: string): Promise<Course[]> {
+    this.logger.log(`${this.LOGGER_PREFIX} get student courses`);
+
+    const studentCourses = await this.studentCourseRepository.find({
+      where: { student: { id: studentId } },
+      relations: { course: true },
+    });
+
+    const courses = studentCourses.map((item) => item.course);
+
+    return courses;
   }
 }

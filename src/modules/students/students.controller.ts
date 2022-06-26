@@ -25,6 +25,7 @@ import { UpdateStudentStatusDto } from './dto/update-student-status.dto';
 import { UpdateStudentDto } from './dto/update-student.dto';
 import { GetStudentsByStatusDto } from './dto/get-students--by-status.dto';
 import { TakeCourseDto } from './dto/take-course.dto';
+import { Course } from '../../db/entities/course/course.entity';
 
 @ApiTags('Student')
 @Controller('students')
@@ -135,6 +136,21 @@ export class StudentsController {
     this.logger.log(`${this.LOGGER_PREFIX} update student`);
     try {
       return this.studentsService.updateStudent(req.user.id, updateStudentDto);
+    } catch (err) {
+      this.logger.error(err);
+      throw err;
+    }
+  }
+
+  @ApiOperation({ summary: 'Get student courses (only for student)' })
+  @ApiResponse({ type: [Course] })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoles.STUDENT)
+  @Get('courses')
+  async getStudentCourses(@Req() req): Promise<Course[]> {
+    this.logger.log(`${this.LOGGER_PREFIX} get student courses`);
+    try {
+      return this.studentsService.getStudentCourses(req.user.id);
     } catch (err) {
       this.logger.error(err);
       throw err;
