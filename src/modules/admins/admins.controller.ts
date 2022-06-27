@@ -39,12 +39,7 @@ export class AdminsController {
   @Post('registration')
   async registration(@Body() adminDto: CreateAdminDto): Promise<string> {
     this.logger.log(`${this.LOGGER_PREFIX} registration`);
-    try {
-      return this.adminsService.createAdmin(adminDto);
-    } catch (err) {
-      this.logger.error(err);
-      throw err;
-    }
+    return this.adminsService.createAdmin(adminDto);
   }
 
   @ApiOperation({ summary: 'Create admin by admin' })

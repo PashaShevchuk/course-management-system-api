@@ -16,7 +16,7 @@ const mockLessonRepository = () => ({
 });
 const lessonIdMock = 'lesson-id';
 
-describe.only('LessonsController', () => {
+describe('LessonsController', () => {
   let lessonsController: LessonsController;
   let lessonsService: LessonsService;
 
