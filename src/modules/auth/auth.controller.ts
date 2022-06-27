@@ -19,11 +19,6 @@ export class AuthController {
     @Body() loginUserDto: LoginUserDto,
   ): Promise<LoginUserResponseDto> {
     this.logger.log(`${this.LOGGER_PREFIX} user login`);
-    try {
-      return this.authService.login(loginUserDto);
-    } catch (err) {
-      this.logger.error(err);
-      throw err;
-    }
+    return this.authService.login(loginUserDto);
   }
 }

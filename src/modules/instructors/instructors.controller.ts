@@ -41,12 +41,7 @@ export class InstructorsController {
     @Body() instructorDto: CreateInstructorDto,
   ): Promise<string> {
     this.logger.log(`${this.LOGGER_PREFIX} registration`);
-    try {
-      return this.instructorsService.createInstructor(instructorDto);
-    } catch (err) {
-      this.logger.error(err);
-      throw err;
-    }
+    return this.instructorsService.createInstructor(instructorDto);
   }
 
   @ApiOperation({ summary: 'Create instructor by admin' })
@@ -58,12 +53,7 @@ export class InstructorsController {
     @Body() instructorDto: CreateInstructorByAdminDto,
   ): Promise<Instructor> {
     this.logger.log(`${this.LOGGER_PREFIX} create instructor by admin`);
-    try {
-      return this.instructorsService.createInstructorByAdmin(instructorDto);
-    } catch (err) {
-      this.logger.error(err);
-      throw err;
-    }
+    return this.instructorsService.createInstructorByAdmin(instructorDto);
   }
 
   @ApiOperation({ summary: 'Get instructors by status (only for admin)' })
@@ -75,14 +65,9 @@ export class InstructorsController {
     @Body() getInstructorsByStatusDto: GetInstructorsByStatusDto,
   ): Promise<Instructor[]> {
     this.logger.log(`${this.LOGGER_PREFIX} get instructors by status`);
-    try {
-      return this.instructorsService.getInstructorsByParams({
-        is_active: getInstructorsByStatusDto.is_active,
-      });
-    } catch (err) {
-      this.logger.error(err);
-      throw err;
-    }
+    return this.instructorsService.getInstructorsByParams({
+      is_active: getInstructorsByStatusDto.is_active,
+    });
   }
 
   @ApiOperation({
@@ -97,12 +82,7 @@ export class InstructorsController {
     @Body() statusDto: UpdateInstructorStatusDto,
   ): Promise<Instructor> {
     this.logger.log(`${this.LOGGER_PREFIX} update instructor is_active status`);
-    try {
-      return this.instructorsService.updateStatus(userId, statusDto);
-    } catch (err) {
-      this.logger.error(err);
-      throw err;
-    }
+    return this.instructorsService.updateStatus(userId, statusDto);
   }
 
   @ApiOperation({ summary: 'Update instructor' })
@@ -115,15 +95,10 @@ export class InstructorsController {
     @Body() updateInstructorDto: UpdateInstructorDto,
   ): Promise<Instructor> {
     this.logger.log(`${this.LOGGER_PREFIX} update instructor`);
-    try {
-      return this.instructorsService.updateInstructor(
-        req.user.id,
-        updateInstructorDto,
-      );
-    } catch (err) {
-      this.logger.error(err);
-      throw err;
-    }
+    return this.instructorsService.updateInstructor(
+      req.user.id,
+      updateInstructorDto,
+    );
   }
 
   @ApiOperation({ summary: 'Get all instructors (only for admin)' })
@@ -133,12 +108,7 @@ export class InstructorsController {
   @Get()
   async getAll(): Promise<Instructor[]> {
     this.logger.log(`${this.LOGGER_PREFIX} get all instructors`);
-    try {
-      return this.instructorsService.getAllInstructors();
-    } catch (err) {
-      this.logger.error(err);
-      throw err;
-    }
+    return this.instructorsService.getAllInstructors();
   }
 
   @ApiOperation({ summary: 'Get instructor by ID (only for Admin)' })
@@ -148,12 +118,7 @@ export class InstructorsController {
   @Get('admin/:id')
   async getOneByAdmin(@Param('id') id: string): Promise<Instructor> {
     this.logger.log(`${this.LOGGER_PREFIX} get instructor by ID by admin`);
-    try {
-      return this.instructorsService.getInstructorById(id);
-    } catch (err) {
-      this.logger.error(err);
-      throw err;
-    }
+    return this.instructorsService.getInstructorById(id);
   }
 
   @ApiOperation({ summary: 'Get instructor by ID' })
@@ -163,12 +128,7 @@ export class InstructorsController {
   @Get('data')
   async getOne(@Req() req): Promise<Instructor> {
     this.logger.log(`${this.LOGGER_PREFIX} get instructor by ID`);
-    try {
-      return this.instructorsService.getInstructorById(req.user.id);
-    } catch (err) {
-      this.logger.error(err);
-      throw err;
-    }
+    return this.instructorsService.getInstructorById(req.user.id);
   }
 
   @ApiOperation({ summary: 'Delete instructor by ID (only for admin)' })
@@ -177,11 +137,6 @@ export class InstructorsController {
   @Delete(':id')
   async delete(@Param('id') id: string) {
     this.logger.log(`${this.LOGGER_PREFIX} delete instructor by ID`);
-    try {
-      return this.instructorsService.deleteInstructorById(id);
-    } catch (err) {
-      this.logger.error(err);
-      throw err;
-    }
+    return this.instructorsService.deleteInstructorById(id);
   }
 }

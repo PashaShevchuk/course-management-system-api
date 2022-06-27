@@ -35,12 +35,7 @@ export class CoursesController {
   @Post('assign-instructor')
   async assignInstructor(@Body() assignInstructorDto: AssignInstructorDto) {
     this.logger.log(`${this.LOGGER_PREFIX} assign instructor for course`);
-    try {
-      return this.coursesService.assignInstructor(assignInstructorDto);
-    } catch (err) {
-      this.logger.error(err);
-      throw err;
-    }
+    return this.coursesService.assignInstructor(assignInstructorDto);
   }
 
   @ApiOperation({ summary: 'Get courses by status (only for admin)' })
@@ -52,14 +47,9 @@ export class CoursesController {
     @Body() getCoursesByStatusDto: GetCoursesByStatusDto,
   ): Promise<Course[]> {
     this.logger.log(`${this.LOGGER_PREFIX} get courses by status`);
-    try {
-      return this.coursesService.getCoursesByParams({
-        is_published: getCoursesByStatusDto.is_published,
-      });
-    } catch (err) {
-      this.logger.error(err);
-      throw err;
-    }
+    return this.coursesService.getCoursesByParams({
+      is_published: getCoursesByStatusDto.is_published,
+    });
   }
 
   @ApiOperation({ summary: 'Create course (only for admin)' })
@@ -69,12 +59,7 @@ export class CoursesController {
   @Post('create')
   async create(@Body() createCourseDto: CreateCourseDto): Promise<Course> {
     this.logger.log(`${this.LOGGER_PREFIX} create course`);
-    try {
-      return this.coursesService.createCourse(createCourseDto);
-    } catch (err) {
-      this.logger.error(err);
-      throw err;
-    }
+    return this.coursesService.createCourse(createCourseDto);
   }
 
   @ApiOperation({ summary: 'Update course (only for admin)' })
@@ -87,12 +72,7 @@ export class CoursesController {
     @Body() createCourseDto: CreateCourseDto,
   ): Promise<Course> {
     this.logger.log(`${this.LOGGER_PREFIX} update course`);
-    try {
-      return this.coursesService.updateCourse(courseId, createCourseDto);
-    } catch (err) {
-      this.logger.error(err);
-      throw err;
-    }
+    return this.coursesService.updateCourse(courseId, createCourseDto);
   }
 
   @ApiOperation({ summary: 'Publish course (only for admin)' })
@@ -102,12 +82,7 @@ export class CoursesController {
   @Get(':id/publish')
   async publishCourse(@Param('id') courseId: string): Promise<Course> {
     this.logger.log(`${this.LOGGER_PREFIX} publish course`);
-    try {
-      return this.coursesService.publishCourse(courseId);
-    } catch (err) {
-      this.logger.error(err);
-      throw err;
-    }
+    return this.coursesService.publishCourse(courseId);
   }
 
   @ApiOperation({ summary: 'Get course lessons' })
@@ -117,12 +92,7 @@ export class CoursesController {
   @Get(':id/lessons')
   async getCourseLessons(@Param('id') courseId: string): Promise<Course> {
     this.logger.log(`${this.LOGGER_PREFIX} get course lessons`);
-    try {
-      return this.coursesService.getCourseLessons(courseId);
-    } catch (err) {
-      this.logger.error(err);
-      throw err;
-    }
+    return this.coursesService.getCourseLessons(courseId);
   }
 
   @ApiOperation({ summary: 'Get all published courses' })
@@ -132,12 +102,7 @@ export class CoursesController {
   @Get()
   async getAll(): Promise<Course[]> {
     this.logger.log(`${this.LOGGER_PREFIX} get all published courses`);
-    try {
-      return this.coursesService.getAllCourses();
-    } catch (err) {
-      this.logger.error(err);
-      throw err;
-    }
+    return this.coursesService.getAllCourses();
   }
 
   @ApiOperation({ summary: 'Delete course by ID (only for admin)' })
@@ -146,11 +111,6 @@ export class CoursesController {
   @Delete(':id')
   async delete(@Param('id') courseId: string) {
     this.logger.log(`${this.LOGGER_PREFIX} delete course by ID`);
-    try {
-      return this.coursesService.deleteCourseById(courseId);
-    } catch (err) {
-      this.logger.error(err);
-      throw err;
-    }
+    return this.coursesService.deleteCourseById(courseId);
   }
 }

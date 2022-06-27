@@ -54,12 +54,7 @@ export class AdminsController {
   @Post('create')
   async createByAdmin(@Body() adminDto: CreateAdminByAdminDto): Promise<Admin> {
     this.logger.log(`${this.LOGGER_PREFIX} create admin by admin`);
-    try {
-      return this.adminsService.createAdminByAdmin(adminDto);
-    } catch (err) {
-      this.logger.error(err);
-      throw err;
-    }
+    return this.adminsService.createAdminByAdmin(adminDto);
   }
 
   @ApiOperation({ summary: 'Get admins by status (only for admin)' })
@@ -71,14 +66,9 @@ export class AdminsController {
     @Body() getAdminsByStatusDto: GetAdminsByStatusDto,
   ): Promise<Admin[]> {
     this.logger.log(`${this.LOGGER_PREFIX} get admins by status`);
-    try {
-      return this.adminsService.getAdminsByParams({
-        is_active: getAdminsByStatusDto.is_active,
-      });
-    } catch (err) {
-      this.logger.error(err);
-      throw err;
-    }
+    return this.adminsService.getAdminsByParams({
+      is_active: getAdminsByStatusDto.is_active,
+    });
   }
 
   @ApiOperation({
@@ -93,12 +83,7 @@ export class AdminsController {
     @Body() statusDto: UpdateAdminStatusDto,
   ): Promise<Admin> {
     this.logger.log(`${this.LOGGER_PREFIX} update admin is_active status`);
-    try {
-      return this.adminsService.updateStatus(userId, statusDto);
-    } catch (err) {
-      this.logger.error(err);
-      throw err;
-    }
+    return this.adminsService.updateStatus(userId, statusDto);
   }
 
   @ApiOperation({ summary: 'Update admin' })
@@ -111,12 +96,7 @@ export class AdminsController {
     @Body() updateAdminDto: UpdateAdminDto,
   ): Promise<Admin> {
     this.logger.log(`${this.LOGGER_PREFIX} update admin`);
-    try {
-      return this.adminsService.updateAdmin(req.user.id, updateAdminDto);
-    } catch (err) {
-      this.logger.error(err);
-      throw err;
-    }
+    return this.adminsService.updateAdmin(req.user.id, updateAdminDto);
   }
 
   @ApiOperation({ summary: 'Get all admins (only for admin)' })
@@ -126,12 +106,7 @@ export class AdminsController {
   @Get()
   async getAll(): Promise<Admin[]> {
     this.logger.log(`${this.LOGGER_PREFIX} get all admins`);
-    try {
-      return this.adminsService.getAllAdmins();
-    } catch (err) {
-      this.logger.error(err);
-      throw err;
-    }
+    return this.adminsService.getAllAdmins();
   }
 
   @ApiOperation({ summary: 'Get admin by ID (only for admin)' })
@@ -141,12 +116,7 @@ export class AdminsController {
   @Get(':id')
   async getOne(@Param('id') id: string): Promise<Admin> {
     this.logger.log(`${this.LOGGER_PREFIX} get admin by ID`);
-    try {
-      return this.adminsService.getAdminById(id);
-    } catch (err) {
-      this.logger.error(err);
-      throw err;
-    }
+    return this.adminsService.getAdminById(id);
   }
 
   @ApiOperation({ summary: 'Delete admin by ID (only for admin)' })
@@ -155,11 +125,6 @@ export class AdminsController {
   @Delete(':id')
   async delete(@Param('id') id: string) {
     this.logger.log(`${this.LOGGER_PREFIX} delete admin by ID`);
-    try {
-      return this.adminsService.deleteAdminById(id);
-    } catch (err) {
-      this.logger.error(err);
-      throw err;
-    }
+    return this.adminsService.deleteAdminById(id);
   }
 }
