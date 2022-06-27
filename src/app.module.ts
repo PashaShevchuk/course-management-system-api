@@ -11,6 +11,7 @@ import { MailModule } from './modules/mail/mail.module';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { StudentsModule } from './modules/students/students.module';
 import { CoursesModule } from './modules/courses/courses.module';
+import { LessonsModule } from './modules/lessons/lessons.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { CoursesModule } from './modules/courses/courses.module';
     MailModule,
     StudentsModule,
     CoursesModule,
+    LessonsModule,
   ],
   controllers: [AppController],
   providers: [],

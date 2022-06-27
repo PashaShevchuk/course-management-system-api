@@ -8,6 +8,7 @@ import { RedisModule } from '../redis/redis.module';
 import { ConfigModule } from '../../config/config.module';
 import { StudentsModule } from '../students/students.module';
 import { CoursesModule } from '../courses/courses.module';
+import { LessonsModule } from '../lessons/lessons.module';
 
 @Module({
   controllers: [AuthController],
@@ -23,6 +24,7 @@ import { CoursesModule } from '../courses/courses.module';
     forwardRef(() => InstructorsModule),
     forwardRef(() => StudentsModule),
     forwardRef(() => CoursesModule),
+    forwardRef(() => LessonsModule),
     RedisModule,
     ConfigModule,
   ],
