@@ -33,12 +33,7 @@ export class LessonsController {
   @Post('create')
   async create(@Body() createLessonDto: CreateLessonDto): Promise<Lesson> {
     this.logger.log(`${this.LOGGER_PREFIX} create lesson`);
-    try {
-      return this.lessonsService.createLesson(createLessonDto);
-    } catch (err) {
-      this.logger.error(err);
-      throw err;
-    }
+    return this.lessonsService.createLesson(createLessonDto);
   }
 
   @ApiOperation({ summary: 'Update lesson (only for admin)' })
@@ -51,12 +46,7 @@ export class LessonsController {
     @Body() updateLessonDto: CreateLessonDto,
   ): Promise<Lesson> {
     this.logger.log(`${this.LOGGER_PREFIX} update lesson`);
-    try {
-      return this.lessonsService.updateLesson(lessonId, updateLessonDto);
-    } catch (err) {
-      this.logger.error(err);
-      throw err;
-    }
+    return this.lessonsService.updateLesson(lessonId, updateLessonDto);
   }
 
   @ApiOperation({ summary: 'Get all lessons (only for admin)' })
@@ -66,12 +56,7 @@ export class LessonsController {
   @Get()
   async getAll(): Promise<Lesson[]> {
     this.logger.log(`${this.LOGGER_PREFIX} get all lessons`);
-    try {
-      return this.lessonsService.getAllLessons();
-    } catch (err) {
-      this.logger.error(err);
-      throw err;
-    }
+    return this.lessonsService.getAllLessons();
   }
 
   @ApiOperation({ summary: 'Get lesson by ID (only for admin)' })
@@ -81,12 +66,7 @@ export class LessonsController {
   @Get(':id')
   async getOne(@Param('id') lessonId: string): Promise<Lesson> {
     this.logger.log(`${this.LOGGER_PREFIX} get lesson by Id`);
-    try {
-      return this.lessonsService.getLessonById(lessonId);
-    } catch (err) {
-      this.logger.error(err);
-      throw err;
-    }
+    return this.lessonsService.getLessonById(lessonId);
   }
 
   @ApiOperation({ summary: 'Delete lesson by ID (only for admin)' })
@@ -95,11 +75,6 @@ export class LessonsController {
   @Delete(':id')
   async delete(@Param('id') lessonId: string) {
     this.logger.log(`${this.LOGGER_PREFIX} delete lesson by Id`);
-    try {
-      return this.lessonsService.deleteLessonById(lessonId);
-    } catch (err) {
-      this.logger.error(err);
-      throw err;
-    }
+    return this.lessonsService.deleteLessonById(lessonId);
   }
 }

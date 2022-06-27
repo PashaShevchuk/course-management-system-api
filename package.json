@@ -18,7 +18,7 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "test:e2e": "jest --config test/e2e/jest-e2e.json",
     "typeorm": "ts-node -r tsconfig-paths/register node_modules/typeorm/cli -d src/config/ormconfig.ts",
     "migration:create": "ts-node -r tsconfig-paths/register node_modules/typeorm/cli migration:create src/db/migration/$npm_config_name",
     "migration:generate": "npm run typeorm -- migration:generate src/db/migration/$npm_config_name",
@@ -90,6 +90,23 @@
       "**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "coverageThreshold": {
+      "global": {
+        "branches": 80,
+        "functions": 80,
+        "lines": 80,
+        "statements": 80
+      }
+    },
+    "coveragePathIgnorePatterns": [
+      "<rootDir>/config",
+      "<rootDir>/db",
+      "<rootDir>/templates",
+      "<rootDir>/modules/mail",
+      "<rootDir>/modules/redis",
+      "<rootDir>/main.ts",
+      ".module.ts"
+    ]
   }
 }
