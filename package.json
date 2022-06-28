@@ -106,7 +106,9 @@
       "<rootDir>/modules/mail",
       "<rootDir>/modules/redis",
       "<rootDir>/main.ts",
-      ".module.ts"
+      ".module.ts",
+      "jwt-auth.guard.ts",
+      "role.guard.ts"
     ]
   }
 }

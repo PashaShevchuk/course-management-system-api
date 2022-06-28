@@ -30,7 +30,7 @@ const hashMock = 'hash';
 const createAdminDataMock = {
   first_name: 'New Admin',
   last_name: 'New Admin',
-  email: 'New Admin',
+  email: 'email',
   password: '123456789',
 };
 const createAdminByAdminDataMock = {
