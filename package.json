@@ -107,6 +107,7 @@
       "<rootDir>/modules/redis",
       "<rootDir>/main.ts",
       ".module.ts",
+      ".dto.ts",
       "jwt-auth.guard.ts",
       "role.guard.ts"
     ]

@@ -47,6 +47,8 @@ describe('LessonsService', () => {
     lessonRepository = module.get(getRepositoryToken(Lesson));
   });
 
+  afterEach(() => jest.clearAllMocks());
+
   describe('getAllLessons', () => {
     it('should get all lessons', async () => {
       lessonRepository.find.mockResolvedValue([lessonMockData]);

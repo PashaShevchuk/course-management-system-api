@@ -1,4 +1,4 @@
-export const courseLessonsExample = {
+export const courseLessonsExampleDto = {
   id: '2a150236-2305-41ea-a162-d64d81979408',
   title: 'Magic',
   description: 'Some text',

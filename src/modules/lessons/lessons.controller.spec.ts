@@ -48,6 +48,8 @@ describe('LessonsController', () => {
     lessonsController = module.get(LessonsController);
   });
 
+  afterEach(() => jest.clearAllMocks());
+
   describe('getAll', () => {
     it('should get all lessons', async () => {
       const result = [new Lesson()];

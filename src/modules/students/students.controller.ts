@@ -27,7 +27,7 @@ import { GetStudentsByStatusDto } from './dto/get-students--by-status.dto';
 import { TakeCourseDto } from './dto/take-course.dto';
 import { Course } from '../../db/entities/course/course.entity';
 import { Lesson } from '../../db/entities/lesson/lesson.entity';
-import { studentLessonsExample } from './dto/student-lessons-example';
+import { studentLessonsExampleDto } from './dto/student-lessons-example.dto';
 
 @ApiTags('Student')
 @Controller('students')
@@ -125,7 +125,7 @@ export class StudentsController {
   }
 
   @ApiOperation({ summary: 'Get student course lessons (only for student)' })
-  @ApiResponse({ schema: { example: studentLessonsExample } })
+  @ApiResponse({ schema: { example: studentLessonsExampleDto } })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoles.STUDENT)
   @Get('courses/:id/lessons')

@@ -19,7 +19,7 @@ import { Course } from '../../db/entities/course/course.entity';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { AssignInstructorDto } from './dto/assign-instructor.dto';
 import { GetCoursesByStatusDto } from './dto/get-courses-by-status.dto';
-import { courseLessonsExample } from './dto/course-lessons-example';
+import { courseLessonsExampleDto } from './dto/course-lessons-example.dto';
 
 @ApiTags('Course')
 @Controller('courses')
@@ -86,7 +86,7 @@ export class CoursesController {
   }
 
   @ApiOperation({ summary: 'Get course lessons' })
-  @ApiResponse({ schema: { example: courseLessonsExample } })
+  @ApiResponse({ schema: { example: courseLessonsExampleDto } })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoles.ADMIN, UserRoles.INSTRUCTOR, UserRoles.STUDENT)
   @Get(':id/lessons')

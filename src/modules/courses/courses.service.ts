@@ -154,7 +154,7 @@ export class CoursesService {
     }
   }
 
-  async getCourseLessons(id: string) {
+  async getCourseLessons(id: string): Promise<Course> {
     this.logger.log(`${this.LOGGER_PREFIX} get course lessons`);
 
     const course = await this.courseRepository.findOne({

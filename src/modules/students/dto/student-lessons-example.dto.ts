@@ -1,4 +1,4 @@
-export const studentLessonsExample = {
+export const studentLessonsExampleDto = {
   id: 'c5023702-99fe-4448-ab9d-54cee9075a39',
   title: 'JavaScript',
   description: 'Some text',

@@ -57,6 +57,8 @@ describe('AdminsController', () => {
     adminsController = module.get(AdminsController);
   });
 
+  afterEach(() => jest.clearAllMocks());
+
   describe('registration', () => {
     it('should register user', async () => {
       const result = 'massage-about-registration';

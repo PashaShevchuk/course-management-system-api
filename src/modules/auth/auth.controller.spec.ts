@@ -50,6 +50,8 @@ describe('AuthController', () => {
     authService = module.get(AuthService);
   });
 
+  afterEach(() => jest.clearAllMocks());
+
   describe('login', () => {
     it('should log in user', async () => {
       const result = new LoginUserResponseDto();
