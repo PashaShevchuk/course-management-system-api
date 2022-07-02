@@ -311,6 +311,34 @@ describe('CoursesService', () => {
         expect(err).toBe(notFoundError);
       }
     });
+
+    it('should throw an error if user is already assigned to course', async () => {
+      const errMock = new HttpException(
+        'This user is already assigned to this course',
+        HttpStatus.BAD_REQUEST,
+      );
+
+      courseRepository.findOne.mockResolvedValue(courseDataMock);
+      const getInstructorByIdSpy = jest.spyOn(
+        mockedInstructorsService,
+        'getInstructorById',
+      );
+      instructorCourseRepository.save.mockRejectedValue({ code: '23505' });
+
+      try {
+        await coursesService.assignInstructor({
+          courseId: courseIdMock,
+          instructorId: instructorIdMock,
+        });
+      } catch (err) {
+        expect(courseRepository.findOne).toHaveBeenCalledWith({
+          where: { id: courseIdMock },
+        });
+        expect(getInstructorByIdSpy).toHaveBeenCalledWith(instructorIdMock);
+        expect(instructorCourseRepository.save).toHaveBeenCalled();
+        expect(err).toEqual(errMock);
+      }
+    });
   });
 
   describe('getCoursesByParams', () => {

@@ -43,6 +43,7 @@ const instructorDataMock = {
   first_name: createInstructorDataMock.first_name,
   last_name: createInstructorDataMock.last_name,
   email: createInstructorDataMock.email,
+  position: createInstructorDataMock.position,
   is_active: createInstructorByAdminDataMock.is_active,
   hash_password: hashMock,
   created_at: '2022-06-17T11:55:43.032Z',

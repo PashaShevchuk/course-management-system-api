@@ -129,7 +129,7 @@ export class CoursesService {
     } catch (err) {
       if (err.code === '23505') {
         throw new HttpException(
-          'This user is already assigned to this company',
+          'This user is already assigned to this course',
           HttpStatus.BAD_REQUEST,
         );
       }

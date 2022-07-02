@@ -27,6 +27,10 @@ const createLessonDataMock = {
   course_id: courseIdMock,
 };
 const notFoundError = new HttpException('Data not found', HttpStatus.NOT_FOUND);
+const courseNotFoundErr = new HttpException(
+  'Course not found',
+  HttpStatus.BAD_REQUEST,
+);
 
 describe('LessonsService', () => {
   let lessonsService: LessonsService;
@@ -103,6 +107,17 @@ describe('LessonsService', () => {
         lessonsService.createLesson(createLessonDataMock),
       ).rejects.toThrow(errorMock);
     });
+
+    it('should throw an error if lesson course is not found', async () => {
+      lessonRepository.save.mockRejectedValue({ code: '23503' });
+
+      try {
+        await lessonsService.createLesson(createLessonDataMock);
+      } catch (err) {
+        expect(lessonRepository.save).toHaveBeenCalled();
+        expect(err).toEqual(courseNotFoundErr);
+      }
+    });
   });
 
   describe('updateLesson', () => {
@@ -137,6 +152,18 @@ describe('LessonsService', () => {
       expect(lessonRepository.findOne).toHaveBeenCalledWith({
         where: { id: lessonIdMock },
       });
+    });
+
+    it('should throw an error if lesson course is not found', async () => {
+      lessonRepository.findOne.mockResolvedValue(lessonMockData);
+      lessonRepository.save.mockRejectedValue({ code: '23503' });
+
+      try {
+        await lessonsService.updateLesson(lessonIdMock, createLessonDataMock);
+      } catch (err) {
+        expect(lessonRepository.save).toHaveBeenCalled();
+        expect(err).toEqual(courseNotFoundErr);
+      }
     });
   });
 
