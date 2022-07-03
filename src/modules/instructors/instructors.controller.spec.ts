@@ -17,6 +17,8 @@ import { InstructorCourse } from '../../db/entities/instructor-course/instructor
 import { StudentCourse } from '../../db/entities/student-course/student-course.entity';
 import { Lesson } from '../../db/entities/lesson/lesson.entity';
 import { Student } from '../../db/entities/student/student.entity';
+import { CourseFeedback } from '../../db/entities/course-feedback/course-feedback.entity';
+import { CreateFeedbackDto } from './dto/create-feedback.dto';
 
 const mockRepository = () => ({
   find: jest.fn(),
@@ -50,6 +52,10 @@ describe('InstructorsController', () => {
         },
         {
           provide: getRepositoryToken(Lesson),
+          useFactory: mockRepository,
+        },
+        {
+          provide: getRepositoryToken(CourseFeedback),
           useFactory: mockRepository,
         },
         {
@@ -248,6 +254,29 @@ describe('InstructorsController', () => {
           courseIdMock,
         ),
       ).toBe(result);
+    });
+  });
+
+  describe('createCourseFeedback', () => {
+    it('should create course feedback', async () => {
+      const reqMock = { user: { id: instructorIdMock } };
+      const dto = new CreateFeedbackDto();
+
+      jest
+        .spyOn(instructorsService, 'createCourseFeedback')
+        .mockImplementation(() => Promise.resolve());
+
+      await instructorsController.createCourseFeedback(
+        reqMock,
+        courseIdMock,
+        dto,
+      );
+
+      expect(instructorsService.createCourseFeedback).toHaveBeenCalledWith(
+        reqMock.user.id,
+        courseIdMock,
+        dto,
+      );
     });
   });
 });

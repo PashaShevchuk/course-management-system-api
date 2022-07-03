@@ -9,6 +9,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Lesson } from '../lesson/lesson.entity';
 import { InstructorCourse } from '../instructor-course/instructor-course.entity';
 import { StudentCourse } from '../student-course/student-course.entity';
+import { CourseFeedback } from '../course-feedback/course-feedback.entity';
 
 @Entity()
 export class Course {
@@ -63,4 +64,7 @@ export class Course {
 
   @OneToMany(() => StudentCourse, (studentCourse) => studentCourse.course)
   studentCourses: StudentCourse[];
+
+  @OneToMany(() => CourseFeedback, (courseFeedback) => courseFeedback.course)
+  courseFeedbacks: CourseFeedback[];
 }

@@ -22,6 +22,8 @@ import { InstructorCourse } from '../../db/entities/instructor-course/instructor
 import { Lesson } from '../../db/entities/lesson/lesson.entity';
 import { StudentCourse } from '../../db/entities/student-course/student-course.entity';
 import { Student } from '../../db/entities/student/student.entity';
+import { CreateFeedbackDto } from './dto/create-feedback.dto';
+import { CourseFeedback } from '../../db/entities/course-feedback/course-feedback.entity';
 
 @Injectable()
 export class InstructorsService {
@@ -37,6 +39,8 @@ export class InstructorsService {
     private readonly lessonRepository: Repository<Lesson>,
     @InjectRepository(StudentCourse)
     private readonly studentCourseRepository: Repository<StudentCourse>,
+    @InjectRepository(CourseFeedback)
+    private readonly courseFeedbackRepository: Repository<CourseFeedback>,
     @Inject(forwardRef(() => AuthService))
     private readonly authService: AuthService,
     private readonly configService: ConfigService,
@@ -267,5 +271,54 @@ export class InstructorsService {
     }, []);
 
     return students;
+  }
+
+  async createCourseFeedback(
+    instructorId: string,
+    courseId: string,
+    createFeedbackDto: CreateFeedbackDto,
+  ) {
+    this.logger.log(`${this.LOGGER_PREFIX} create course feedback`);
+
+    const instructorCourse = await this.instructorCourseRepository.findOne({
+      where: {
+        instructor: { id: instructorId },
+        course: { id: courseId },
+      },
+    });
+
+    if (!instructorCourse) {
+      throw new HttpException('Course not found', HttpStatus.NOT_FOUND);
+    }
+
+    const studentCourse = await this.studentCourseRepository.findOne({
+      where: {
+        course: { id: courseId },
+        student: { id: createFeedbackDto.student_id },
+      },
+    });
+
+    if (!studentCourse) {
+      throw new HttpException('Student not found', HttpStatus.NOT_FOUND);
+    }
+
+    const feedbackData = new CourseFeedback();
+    feedbackData.text = createFeedbackDto.text;
+    feedbackData.student = <any>{ id: createFeedbackDto.student_id };
+    feedbackData.instructor = <any>{ id: instructorId };
+    feedbackData.course = <any>{ id: courseId };
+
+    try {
+      await this.courseFeedbackRepository.save(feedbackData);
+    } catch (err) {
+      if (err.code === '23505') {
+        throw new HttpException(
+          'You have already left feedback for this student',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      throw err;
+    }
   }
 }

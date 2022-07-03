@@ -10,6 +10,7 @@ import { MailModule } from '../mail/mail.module';
 import { InstructorCourse } from '../../db/entities/instructor-course/instructor-course.entity';
 import { Lesson } from '../../db/entities/lesson/lesson.entity';
 import { StudentCourse } from '../../db/entities/student-course/student-course.entity';
+import { CourseFeedback } from '../../db/entities/course-feedback/course-feedback.entity';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { StudentCourse } from '../../db/entities/student-course/student-course.e
       InstructorCourse,
       Lesson,
       StudentCourse,
+      CourseFeedback,
     ]),
     forwardRef(() => AuthModule),
     ConfigModule,

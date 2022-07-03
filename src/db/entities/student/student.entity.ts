@@ -3,6 +3,7 @@ import { UserRoles } from '../../../constants';
 import { ApiProperty } from '@nestjs/swagger';
 import { Exclude } from 'class-transformer';
 import { StudentCourse } from '../student-course/student-course.entity';
+import { CourseFeedback } from '../course-feedback/course-feedback.entity';
 
 @Entity()
 export class Student {
@@ -72,4 +73,7 @@ export class Student {
 
   @OneToMany(() => StudentCourse, (studentCourse) => studentCourse.student)
   studentCourses: StudentCourse[];
+
+  @OneToMany(() => CourseFeedback, (courseFeedback) => courseFeedback.student)
+  studentFeedbacks: CourseFeedback[];
 }

@@ -3,6 +3,7 @@ import { UserRoles } from '../../../constants';
 import { Exclude } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 import { InstructorCourse } from '../instructor-course/instructor-course.entity';
+import { CourseFeedback } from '../course-feedback/course-feedback.entity';
 
 @Entity()
 export class Instructor {
@@ -76,4 +77,10 @@ export class Instructor {
     (instructorCourse) => instructorCourse.instructor,
   )
   instructorCourses: InstructorCourse[];
+
+  @OneToMany(
+    () => CourseFeedback,
+    (instructorFeedback) => instructorFeedback.instructor,
+  )
+  instructorFeedbacks: CourseFeedback[];
 }

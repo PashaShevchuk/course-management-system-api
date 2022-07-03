@@ -10,6 +10,7 @@ import { HttpException, HttpStatus } from '@nestjs/common';
 import { Lesson } from '../../db/entities/lesson/lesson.entity';
 import { StudentCourse } from '../../db/entities/student-course/student-course.entity';
 import { InstructorCourse } from '../../db/entities/instructor-course/instructor-course.entity';
+import { CourseFeedback } from '../../db/entities/course-feedback/course-feedback.entity';
 
 const mockRepository = () => ({
   find: jest.fn(),
@@ -104,6 +105,15 @@ const studentCourseDataDBMock = {
   updated_at: '2022-06-17T15:29:38.996Z',
   student: studentDataMock,
 };
+const courseFeedbackDataDBMock = {
+  id: 'id',
+  text: 'text',
+  studentId: studentIdMock,
+  courseId: courseIdMock,
+  instructorId: instructorIdMock,
+  created_at: '2022-06-17T15:29:38.996Z',
+  updated_at: '2022-06-17T15:29:38.996Z',
+};
 
 describe('InstructorsService', () => {
   let instructorsService: InstructorsService;
@@ -111,6 +121,7 @@ describe('InstructorsService', () => {
   let studentCourseRepository;
   let instructorCourseRepository;
   let lessonRepository;
+  let courseFeedbackRepository;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -130,6 +141,10 @@ describe('InstructorsService', () => {
         },
         {
           provide: getRepositoryToken(Lesson),
+          useFactory: mockRepository,
+        },
+        {
+          provide: getRepositoryToken(CourseFeedback),
           useFactory: mockRepository,
         },
         {
@@ -154,6 +169,7 @@ describe('InstructorsService', () => {
       getRepositoryToken(InstructorCourse),
     );
     lessonRepository = module.get(getRepositoryToken(Lesson));
+    courseFeedbackRepository = module.get(getRepositoryToken(CourseFeedback));
   });
 
   afterEach(() => jest.clearAllMocks());
@@ -461,6 +477,124 @@ describe('InstructorsService', () => {
           courseIdMock,
         ),
       ).rejects.toThrow(notFoundError);
+    });
+  });
+
+  describe('createCourseFeedback', () => {
+    const createFeedbackDataMock = {
+      text: 'text',
+      student_id: studentIdMock,
+    };
+
+    it('should create course feedback', async () => {
+      instructorCourseRepository.findOne.mockResolvedValue(courseDataDBMock);
+      studentCourseRepository.findOne.mockResolvedValue(
+        studentCourseDataDBMock,
+      );
+      courseFeedbackRepository.save.mockResolvedValue(courseFeedbackDataDBMock);
+
+      await instructorsService.createCourseFeedback(
+        instructorIdMock,
+        courseIdMock,
+        createFeedbackDataMock,
+      );
+
+      expect(instructorCourseRepository.findOne).toHaveBeenCalledWith({
+        where: {
+          instructor: { id: instructorIdMock },
+          course: { id: courseIdMock },
+        },
+      });
+      expect(studentCourseRepository.findOne).toHaveBeenCalledWith({
+        where: {
+          course: { id: courseIdMock },
+          student: { id: createFeedbackDataMock.student_id },
+        },
+      });
+      expect(courseFeedbackRepository.save).toHaveBeenCalled();
+    });
+
+    it('should throw an error if course is not found', async () => {
+      instructorCourseRepository.findOne.mockResolvedValue(null);
+
+      await expect(
+        instructorsService.createCourseFeedback(
+          instructorIdMock,
+          courseIdMock,
+          createFeedbackDataMock,
+        ),
+      ).rejects.toThrow(
+        new HttpException('Course not found', HttpStatus.NOT_FOUND),
+      );
+    });
+
+    it('should throw an error if student is not found', async () => {
+      instructorCourseRepository.findOne.mockResolvedValue(courseDataDBMock);
+      studentCourseRepository.findOne.mockResolvedValue(null);
+
+      await expect(
+        instructorsService.createCourseFeedback(
+          instructorIdMock,
+          courseIdMock,
+          createFeedbackDataMock,
+        ),
+      ).rejects.toThrow(
+        new HttpException('Student not found', HttpStatus.NOT_FOUND),
+      );
+    });
+
+    it('should throw an error if instructor has already left feedback', async () => {
+      instructorCourseRepository.findOne.mockResolvedValue(courseDataDBMock);
+      studentCourseRepository.findOne.mockResolvedValue(
+        studentCourseDataDBMock,
+      );
+      courseFeedbackRepository.save.mockRejectedValue({ code: '23505' });
+
+      try {
+        await instructorsService.createCourseFeedback(
+          instructorIdMock,
+          courseIdMock,
+          createFeedbackDataMock,
+        );
+      } catch (err) {
+        expect(instructorCourseRepository.findOne).toHaveBeenCalledWith({
+          where: {
+            instructor: { id: instructorIdMock },
+            course: { id: courseIdMock },
+          },
+        });
+        expect(studentCourseRepository.findOne).toHaveBeenCalledWith({
+          where: {
+            course: { id: courseIdMock },
+            student: { id: createFeedbackDataMock.student_id },
+          },
+        });
+        expect(courseFeedbackRepository.save).toHaveBeenCalled();
+        expect(err).toEqual(
+          new HttpException(
+            'You have already left feedback for this student',
+            HttpStatus.BAD_REQUEST,
+          ),
+        );
+      }
+    });
+
+    it('should throw an error', async () => {
+      const customErr = new Error('message');
+
+      instructorCourseRepository.findOne.mockResolvedValue(courseDataDBMock);
+      studentCourseRepository.findOne.mockResolvedValue(
+        studentCourseDataDBMock,
+      );
+      courseFeedbackRepository.save.mockRejectedValue(customErr);
+
+      await expect(
+        instructorsService.createCourseFeedback(
+          instructorIdMock,
+          courseIdMock,
+          createFeedbackDataMock,
+        ),
+      ).rejects.toThrow(customErr);
     });
   });
 });
