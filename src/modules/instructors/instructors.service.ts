@@ -17,6 +17,11 @@ import { UpdateInstructorStatusDto } from './dto/update-instructor-status.dto';
 import { ConfigService } from '../../config/config.service';
 import { MailService } from '../mail/mail.service';
 import { UpdateInstructorDto } from './dto/update-instructor.dto';
+import { Course } from '../../db/entities/course/course.entity';
+import { InstructorCourse } from '../../db/entities/instructor-course/instructor-course.entity';
+import { Lesson } from '../../db/entities/lesson/lesson.entity';
+import { StudentCourse } from '../../db/entities/student-course/student-course.entity';
+import { Student } from '../../db/entities/student/student.entity';
 
 @Injectable()
 export class InstructorsService {
@@ -26,6 +31,12 @@ export class InstructorsService {
   constructor(
     @InjectRepository(Instructor)
     private readonly instructorRepository: Repository<Instructor>,
+    @InjectRepository(InstructorCourse)
+    private readonly instructorCourseRepository: Repository<InstructorCourse>,
+    @InjectRepository(Lesson)
+    private readonly lessonRepository: Repository<Lesson>,
+    @InjectRepository(StudentCourse)
+    private readonly studentCourseRepository: Repository<StudentCourse>,
     @Inject(forwardRef(() => AuthService))
     private readonly authService: AuthService,
     private readonly configService: ConfigService,
@@ -191,5 +202,70 @@ export class InstructorsService {
     if (!result.affected) {
       throw new HttpException('Data not found', HttpStatus.NOT_FOUND);
     }
+  }
+
+  async getInstructorCourses(instructorId: string): Promise<Course[]> {
+    this.logger.log(`${this.LOGGER_PREFIX} get instructor courses`);
+
+    const instructorCourses = await this.instructorCourseRepository.find({
+      where: { instructor: { id: instructorId } },
+      relations: { course: true },
+    });
+
+    const courses = instructorCourses.map((item) => item.course);
+
+    return courses;
+  }
+
+  async getInstructorCourseLessons(instructorId: string, courseId: string) {
+    this.logger.log(`${this.LOGGER_PREFIX} get instructor course lessons`);
+
+    const instructorCourse = await this.instructorCourseRepository.findOne({
+      where: {
+        instructor: { id: instructorId },
+        course: { id: courseId },
+      },
+    });
+
+    if (!instructorCourse) {
+      throw new HttpException('Data not found', HttpStatus.NOT_FOUND);
+    }
+
+    const lessons = await this.lessonRepository.find({
+      where: { course: { id: courseId } },
+    });
+
+    return lessons;
+  }
+
+  async getInstructorCourseStudents(
+    instructorId: string,
+    courseId: string,
+  ): Promise<Student[]> {
+    const instructorCourse = await this.instructorCourseRepository.findOne({
+      where: {
+        instructor: { id: instructorId },
+        course: { id: courseId },
+      },
+    });
+
+    if (!instructorCourse) {
+      throw new HttpException('Data not found', HttpStatus.NOT_FOUND);
+    }
+
+    const studentCourses = await this.studentCourseRepository.find({
+      where: { course: { id: courseId } },
+      relations: { student: true },
+    });
+
+    const students = studentCourses.reduce((arr, item) => {
+      if (item.student.is_active) {
+        arr.push(item.student);
+      }
+
+      return arr;
+    }, []);
+
+    return students;
   }
 }

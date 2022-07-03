@@ -7,6 +7,9 @@ import { InstructorsService } from './instructors.service';
 import { Instructor } from '../../db/entities/instructor/instructor.entity';
 import { EmailTemplates, UserRoles } from '../../constants';
 import { HttpException, HttpStatus } from '@nestjs/common';
+import { Lesson } from '../../db/entities/lesson/lesson.entity';
+import { StudentCourse } from '../../db/entities/student-course/student-course.entity';
+import { InstructorCourse } from '../../db/entities/instructor-course/instructor-course.entity';
 
 const mockRepository = () => ({
   find: jest.fn(),
@@ -27,6 +30,8 @@ const mockedMailService = {
 };
 const instructorIdMock = 'instructor-id';
 const hashMock = 'hash';
+const studentIdMock = 'student-id';
+const courseIdMock = 'course-id';
 const createInstructorDataMock = {
   first_name: 'New Admin',
   last_name: 'New Admin',
@@ -57,10 +62,55 @@ const userExistError = new HttpException(
   HttpStatus.BAD_REQUEST,
 );
 const notFoundError = new HttpException('Data not found', HttpStatus.NOT_FOUND);
+const courseDataDBMock = {
+  id: 'id',
+  studentId: studentIdMock,
+  courseId: courseIdMock,
+  created_at: '2022-06-17T15:29:38.996Z',
+  updated_at: '2022-06-17T15:29:38.996Z',
+  course: {
+    id: courseIdMock,
+    title: 'string',
+    description: 'string',
+    is_published: true,
+    created_at: '2022-06-17T15:29:38.996Z',
+    updated_at: '2022-06-17T15:29:38.996Z',
+  },
+};
+const lessonDataMock = {
+  id: 'id',
+  title: 'Literature',
+  description: 'Some text ',
+  highest_mark: 100,
+  created_at: '2022-06-17T15:29:38.996Z',
+  updated_at: '2022-06-17T15:29:38.996Z',
+};
+const studentDataMock = {
+  id: studentIdMock,
+  first_name: 'first_name',
+  last_name: 'last_name',
+  email: 'email',
+  birth_date: '01.01.1990',
+  is_active: true,
+  created_at: '2022-06-17T11:55:43.032Z',
+  updated_at: '2022-06-17T11:55:43.032Z',
+  role: UserRoles.STUDENT,
+};
+const studentCourseDataDBMock = {
+  id: 'id',
+  studentId: studentIdMock,
+  courseId: courseIdMock,
+  created_at: '2022-06-17T15:29:38.996Z',
+  updated_at: '2022-06-17T15:29:38.996Z',
+  student: studentDataMock,
+};
 
 describe('InstructorsService', () => {
   let instructorsService: InstructorsService;
   let instructorRepository;
+  let studentCourseRepository;
+  let instructorCourseRepository;
+  let lessonRepository;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -68,6 +118,18 @@ describe('InstructorsService', () => {
         InstructorsService,
         {
           provide: getRepositoryToken(Instructor),
+          useFactory: mockRepository,
+        },
+        {
+          provide: getRepositoryToken(InstructorCourse),
+          useFactory: mockRepository,
+        },
+        {
+          provide: getRepositoryToken(StudentCourse),
+          useFactory: mockRepository,
+        },
+        {
+          provide: getRepositoryToken(Lesson),
           useFactory: mockRepository,
         },
         {
@@ -87,6 +149,11 @@ describe('InstructorsService', () => {
 
     instructorsService = module.get(InstructorsService);
     instructorRepository = module.get(getRepositoryToken(Instructor));
+    studentCourseRepository = module.get(getRepositoryToken(StudentCourse));
+    instructorCourseRepository = module.get(
+      getRepositoryToken(InstructorCourse),
+    );
+    lessonRepository = module.get(getRepositoryToken(Lesson));
   });
 
   afterEach(() => jest.clearAllMocks());
@@ -308,6 +375,91 @@ describe('InstructorsService', () => {
 
       await expect(
         instructorsService.deleteInstructorById(instructorIdMock),
+      ).rejects.toThrow(notFoundError);
+    });
+  });
+
+  describe('getInstructorCourses', () => {
+    it('should get instructor courses', async () => {
+      instructorCourseRepository.find.mockResolvedValue([courseDataDBMock]);
+
+      const result = await instructorsService.getInstructorCourses(
+        instructorIdMock,
+      );
+
+      expect(instructorCourseRepository.find).toHaveBeenCalledWith({
+        where: { instructor: { id: instructorIdMock } },
+        relations: { course: true },
+      });
+      expect(result).toEqual([courseDataDBMock.course]);
+    });
+  });
+
+  describe('getInstructorCourseLessons', () => {
+    it('should get instructor course lessons', async () => {
+      instructorCourseRepository.findOne.mockResolvedValue(courseDataDBMock);
+      lessonRepository.find.mockResolvedValue([lessonDataMock]);
+
+      const result = await instructorsService.getInstructorCourseLessons(
+        instructorIdMock,
+        courseIdMock,
+      );
+
+      expect(instructorCourseRepository.findOne).toHaveBeenCalledWith({
+        where: {
+          instructor: { id: instructorIdMock },
+          course: { id: courseIdMock },
+        },
+      });
+      expect(lessonRepository.find).toHaveBeenCalledWith({
+        where: { course: { id: courseIdMock } },
+      });
+      expect(result).toEqual([lessonDataMock]);
+    });
+
+    it('should throw an error', async () => {
+      instructorCourseRepository.findOne.mockResolvedValue(null);
+
+      await expect(
+        instructorsService.getInstructorCourseLessons(
+          instructorIdMock,
+          courseIdMock,
+        ),
+      ).rejects.toThrow(notFoundError);
+    });
+  });
+
+  describe('getInstructorCourseStudents', () => {
+    it('should get instructor course students', async () => {
+      instructorCourseRepository.findOne.mockResolvedValue(courseDataDBMock);
+      studentCourseRepository.find.mockResolvedValue([studentCourseDataDBMock]);
+
+      const result = await instructorsService.getInstructorCourseStudents(
+        instructorIdMock,
+        courseIdMock,
+      );
+
+      expect(instructorCourseRepository.findOne).toHaveBeenCalledWith({
+        where: {
+          instructor: { id: instructorIdMock },
+          course: { id: courseIdMock },
+        },
+      });
+      expect(studentCourseRepository.find).toHaveBeenCalledWith({
+        where: { course: { id: courseIdMock } },
+        relations: { student: true },
+      });
+      expect(result).toEqual([studentCourseDataDBMock.student]);
+    });
+
+    it('should throw an error', async () => {
+      instructorCourseRepository.findOne.mockResolvedValue(null);
+
+      await expect(
+        instructorsService.getInstructorCourseStudents(
+          instructorIdMock,
+          courseIdMock,
+        ),
       ).rejects.toThrow(notFoundError);
     });
   });

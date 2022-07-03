@@ -24,6 +24,10 @@ import { CreateInstructorDto } from './dto/create-instructor.dto';
 import { UpdateInstructorStatusDto } from './dto/update-instructor-status.dto';
 import { UpdateInstructorDto } from './dto/update-instructor.dto';
 import { GetInstructorsByStatusDto } from './dto/get-instructors--by-status.dto';
+import { Course } from '../../db/entities/course/course.entity';
+import { Lesson } from '../../db/entities/lesson/lesson.entity';
+import { studentLessonsExampleDto } from '../students/dto/student-lessons-example.dto';
+import { Student } from '../../db/entities/student/student.entity';
 
 @ApiTags('Instructor')
 @Controller('instructors')
@@ -109,6 +113,52 @@ export class InstructorsController {
   async getAll(): Promise<Instructor[]> {
     this.logger.log(`${this.LOGGER_PREFIX} get all instructors`);
     return this.instructorsService.getAllInstructors();
+  }
+
+  @ApiOperation({ summary: 'Get instructor courses (only for instructor)' })
+  @ApiResponse({ type: [Course] })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoles.INSTRUCTOR)
+  @Get('courses')
+  async getInstructorCourses(@Req() req): Promise<Course[]> {
+    this.logger.log(`${this.LOGGER_PREFIX} get instructor courses`);
+    return this.instructorsService.getInstructorCourses(req.user.id);
+  }
+
+  @ApiOperation({
+    summary: 'Get instructor course lessons (only for instructor)',
+  })
+  @ApiResponse({ schema: { example: studentLessonsExampleDto } })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoles.INSTRUCTOR)
+  @Get('courses/:id/lessons')
+  async getInstructorCourseLessons(
+    @Req() req,
+    @Param('id') courseId: string,
+  ): Promise<Lesson[]> {
+    this.logger.log(`${this.LOGGER_PREFIX} get instructor course lessons`);
+    return this.instructorsService.getInstructorCourseLessons(
+      req.user.id,
+      courseId,
+    );
+  }
+
+  @ApiOperation({
+    summary: 'Get instructor course students (only for instructor)',
+  })
+  @ApiResponse({ type: [Student] })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoles.INSTRUCTOR)
+  @Get('courses/:id/students')
+  async getInstructorCourseStudents(
+    @Req() req,
+    @Param('id') courseId: string,
+  ): Promise<Student[]> {
+    this.logger.log(`${this.LOGGER_PREFIX} get instructor course students`);
+    return this.instructorsService.getInstructorCourseStudents(
+      req.user.id,
+      courseId,
+    );
   }
 
   @ApiOperation({ summary: 'Get instructor by ID (only for Admin)' })

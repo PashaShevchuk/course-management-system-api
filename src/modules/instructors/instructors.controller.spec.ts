@@ -12,6 +12,11 @@ import { CreateInstructorByAdminDto } from './dto/create-instructor-by-admin.dto
 import { GetInstructorsByStatusDto } from './dto/get-instructors--by-status.dto';
 import { UpdateInstructorStatusDto } from './dto/update-instructor-status.dto';
 import { UpdateInstructorDto } from './dto/update-instructor.dto';
+import { Course } from '../../db/entities/course/course.entity';
+import { InstructorCourse } from '../../db/entities/instructor-course/instructor-course.entity';
+import { StudentCourse } from '../../db/entities/student-course/student-course.entity';
+import { Lesson } from '../../db/entities/lesson/lesson.entity';
+import { Student } from '../../db/entities/student/student.entity';
 
 const mockRepository = () => ({
   find: jest.fn(),
@@ -20,6 +25,7 @@ const mockRepository = () => ({
   delete: jest.fn(),
 });
 const instructorIdMock = 'instructor-id';
+const courseIdMock = 'course-id';
 
 describe('InstructorsController', () => {
   let instructorsController: InstructorsController;
@@ -32,6 +38,18 @@ describe('InstructorsController', () => {
         InstructorsService,
         {
           provide: getRepositoryToken(Instructor),
+          useFactory: mockRepository,
+        },
+        {
+          provide: getRepositoryToken(InstructorCourse),
+          useFactory: mockRepository,
+        },
+        {
+          provide: getRepositoryToken(StudentCourse),
+          useFactory: mockRepository,
+        },
+        {
+          provide: getRepositoryToken(Lesson),
           useFactory: mockRepository,
         },
         {
@@ -179,6 +197,57 @@ describe('InstructorsController', () => {
       expect(instructorsService.deleteInstructorById).toBeCalledWith(
         instructorIdMock,
       );
+    });
+  });
+
+  describe('getInstructorCourses', () => {
+    it('should get instructor courses', async () => {
+      const result = [new Course()];
+      const reqMock = { user: { id: instructorIdMock } };
+
+      jest
+        .spyOn(instructorsService, 'getInstructorCourses')
+        .mockImplementation(() => Promise.resolve(result));
+
+      expect(await instructorsController.getInstructorCourses(reqMock)).toBe(
+        result,
+      );
+    });
+  });
+
+  describe('getInstructorCourseLessons', () => {
+    it('should get instructor course lessons', async () => {
+      const result = [new Lesson()];
+      const reqMock = { user: { id: instructorIdMock } };
+
+      jest
+        .spyOn(instructorsService, 'getInstructorCourseLessons')
+        .mockImplementation(() => Promise.resolve(result));
+
+      expect(
+        await instructorsController.getInstructorCourseLessons(
+          reqMock,
+          courseIdMock,
+        ),
+      ).toBe(result);
+    });
+  });
+
+  describe('getInstructorCourseStudents', () => {
+    it('should get instructor course students', async () => {
+      const result = [new Student()];
+      const reqMock = { user: { id: instructorIdMock } };
+
+      jest
+        .spyOn(instructorsService, 'getInstructorCourseStudents')
+        .mockImplementation(() => Promise.resolve(result));
+
+      expect(
+        await instructorsController.getInstructorCourseStudents(
+          reqMock,
+          courseIdMock,
+        ),
+      ).toBe(result);
     });
   });
 });

@@ -7,11 +7,19 @@ import { AuthModule } from '../auth/auth.module';
 import { ConfigModule } from '../../config/config.module';
 import { RedisModule } from '../redis/redis.module';
 import { MailModule } from '../mail/mail.module';
+import { InstructorCourse } from '../../db/entities/instructor-course/instructor-course.entity';
+import { Lesson } from '../../db/entities/lesson/lesson.entity';
+import { StudentCourse } from '../../db/entities/student-course/student-course.entity';
 
 @Module({
   imports: [
+    TypeOrmModule.forFeature([
+      Instructor,
+      InstructorCourse,
+      Lesson,
+      StudentCourse,
+    ]),
     forwardRef(() => AuthModule),
-    TypeOrmModule.forFeature([Instructor]),
     ConfigModule,
     RedisModule,
     MailModule,
