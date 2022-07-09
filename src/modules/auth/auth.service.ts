@@ -46,6 +46,12 @@ export class AuthService {
     return token;
   }
 
+  async declineToken(userId: string) {
+    this.logger.log(`${this.LOGGER_PREFIX} decline token`);
+
+    await this.redisService.del(userId);
+  }
+
   async hashPassword(password: string): Promise<string> {
     return bcrypt.hash(password, this.PASSWORD_HASH_ROUNDS);
   }
@@ -58,10 +64,6 @@ export class AuthService {
     const tokenPrivateKey = this.configService.getTokenPrivateKey();
 
     return this.jwtService.verify(token, { secret: tokenPrivateKey });
-  }
-
-  async declineToken(userId: string) {
-    await this.redisService.del(userId);
   }
 
   private async generateToken(user: Admin | Instructor | Student) {

@@ -64,4 +64,19 @@ describe('AuthController', () => {
       expect(await authController.login(dto)).toBe(result);
     });
   });
+
+  describe('declineToken', () => {
+    it('should decline token', async () => {
+      const userIdMock = 'user-id';
+      const reqMock = { user: { id: userIdMock } };
+
+      jest
+        .spyOn(authService, 'declineToken')
+        .mockImplementation(() => Promise.resolve());
+
+      await authController.declineToken(reqMock);
+
+      expect(authService.declineToken).toHaveBeenCalledWith(userIdMock);
+    });
+  });
 });
