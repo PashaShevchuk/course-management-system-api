@@ -33,6 +33,7 @@ const instructorIdMock = 'instructor-id';
 const hashMock = 'hash';
 const studentIdMock = 'student-id';
 const courseIdMock = 'course-id';
+const feedbackIdMock = 'feedback-id';
 const createInstructorDataMock = {
   first_name: 'New Admin',
   last_name: 'New Admin',
@@ -106,7 +107,7 @@ const studentCourseDataDBMock = {
   student: studentDataMock,
 };
 const courseFeedbackDataDBMock = {
-  id: 'id',
+  id: feedbackIdMock,
   text: 'text',
   studentId: studentIdMock,
   courseId: courseIdMock,
@@ -631,6 +632,85 @@ describe('InstructorsService', () => {
       ).rejects.toThrow(
         new HttpException('Course not found', HttpStatus.NOT_FOUND),
       );
+    });
+  });
+
+  describe('updateCourseFeedback', () => {
+    const updateFeedbackData = {
+      feedback_id: feedbackIdMock,
+      text: 'some text',
+    };
+
+    it('should update instructor course feedback', async () => {
+      courseFeedbackRepository.findOne.mockResolvedValue(
+        courseFeedbackDataDBMock,
+      );
+      courseFeedbackRepository.save.mockResolvedValue(courseFeedbackDataDBMock);
+
+      await instructorsService.updateCourseFeedback(
+        instructorIdMock,
+        courseIdMock,
+        updateFeedbackData,
+      );
+
+      expect(courseFeedbackRepository.findOne).toHaveBeenCalledWith({
+        where: {
+          course: { id: courseIdMock },
+          instructor: { id: instructorIdMock },
+          id: updateFeedbackData.feedback_id,
+        },
+      });
+      expect(courseFeedbackRepository.save).toHaveBeenCalled();
+    });
+
+    it('should throw an error if feedback is not found', async () => {
+      courseFeedbackRepository.findOne.mockResolvedValue(null);
+
+      await expect(
+        instructorsService.updateCourseFeedback(
+          instructorIdMock,
+          courseIdMock,
+          updateFeedbackData,
+        ),
+      ).rejects.toThrow(
+        new HttpException('Feedback not found', HttpStatus.NOT_FOUND),
+      );
+    });
+  });
+
+  describe('deleteCourseFeedback', () => {
+    it('should delete instructor course feedback', async () => {
+      courseFeedbackRepository.delete.mockResolvedValue({
+        raw: [],
+        affected: 1,
+      });
+
+      await instructorsService.deleteCourseFeedback(
+        instructorIdMock,
+        courseIdMock,
+        feedbackIdMock,
+      );
+
+      expect(courseFeedbackRepository.delete).toHaveBeenCalledWith({
+        id: feedbackIdMock,
+        instructor: { id: instructorIdMock },
+        course: { id: courseIdMock },
+      });
+    });
+
+    it('should throw an error', async () => {
+      courseFeedbackRepository.delete.mockResolvedValue({
+        raw: [],
+        affected: 0,
+      });
+
+      await expect(
+        instructorsService.deleteCourseFeedback(
+          instructorIdMock,
+          courseIdMock,
+          feedbackIdMock,
+        ),
+      ).rejects.toThrow(notFoundError);
     });
   });
 });

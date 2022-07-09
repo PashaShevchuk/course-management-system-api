@@ -24,6 +24,7 @@ import { StudentCourse } from '../../db/entities/student-course/student-course.e
 import { Student } from '../../db/entities/student/student.entity';
 import { CreateFeedbackDto } from './dto/create-feedback.dto';
 import { CourseFeedback } from '../../db/entities/course-feedback/course-feedback.entity';
+import { UpdateFeedbackDto } from './dto/update-feedback.dto';
 
 @Injectable()
 export class InstructorsService {
@@ -347,5 +348,47 @@ export class InstructorsService {
     });
 
     return courseFeedbacks;
+  }
+
+  async updateCourseFeedback(
+    instructorId: string,
+    courseId: string,
+    updateFeedbackDto: UpdateFeedbackDto,
+  ) {
+    this.logger.log(`${this.LOGGER_PREFIX} update course feedback`);
+
+    const courseFeedback = await this.courseFeedbackRepository.findOne({
+      where: {
+        course: { id: courseId },
+        instructor: { id: instructorId },
+        id: updateFeedbackDto.feedback_id,
+      },
+    });
+
+    if (!courseFeedback) {
+      throw new HttpException('Feedback not found', HttpStatus.NOT_FOUND);
+    }
+
+    courseFeedback.text = updateFeedbackDto.text;
+
+    await this.courseFeedbackRepository.save(courseFeedback);
+  }
+
+  async deleteCourseFeedback(
+    instructorId: string,
+    courseId: string,
+    feedbackId: string,
+  ) {
+    this.logger.log(`${this.LOGGER_PREFIX} delete course feedback`);
+
+    const result = await this.courseFeedbackRepository.delete({
+      id: feedbackId,
+      instructor: { id: instructorId },
+      course: { id: courseId },
+    });
+
+    if (!result.affected) {
+      throw new HttpException('Data not found', HttpStatus.NOT_FOUND);
+    }
   }
 }

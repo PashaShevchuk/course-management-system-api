@@ -30,6 +30,7 @@ import { studentLessonsExampleDto } from '../students/dto/student-lessons-exampl
 import { Student } from '../../db/entities/student/student.entity';
 import { CreateFeedbackDto } from './dto/create-feedback.dto';
 import { CourseFeedback } from '../../db/entities/course-feedback/course-feedback.entity';
+import { UpdateFeedbackDto } from './dto/update-feedback.dto';
 
 @ApiTags('Instructor')
 @Controller('instructors')
@@ -137,18 +138,56 @@ export class InstructorsController {
   }
 
   @ApiOperation({
+    summary: 'Update course feedback (only for instructor)',
+  })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoles.INSTRUCTOR)
+  @Put('courses/:id/feedback')
+  async updateCourseFeedback(
+    @Req() req,
+    @Param('id') courseId: string,
+    @Body() updateFeedbackDto: UpdateFeedbackDto,
+  ) {
+    this.logger.log(`${this.LOGGER_PREFIX} update course feedback`);
+    return this.instructorsService.updateCourseFeedback(
+      req.user.id,
+      courseId,
+      updateFeedbackDto,
+    );
+  }
+
+  @ApiOperation({
     summary: 'Get instructor course feedbacks (only for instructor)',
   })
   @ApiResponse({ type: [CourseFeedback] })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoles.INSTRUCTOR)
-  @Get('courses/:id/feedbacks')
+  @Get('courses/:id/feedback')
   async getCourseFeedbacks(
     @Req() req,
     @Param('id') courseId: string,
   ): Promise<CourseFeedback[]> {
     this.logger.log(`${this.LOGGER_PREFIX} get instructor course feedbacks`);
     return this.instructorsService.getCourseFeedbacks(req.user.id, courseId);
+  }
+
+  @ApiOperation({
+    summary: 'Delete instructor course feedback (only for instructor)',
+  })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoles.INSTRUCTOR)
+  @Delete('courses/:id/feedback/:feedbackId')
+  async deleteCourseFeedback(
+    @Req() req,
+    @Param('id') courseId: string,
+    @Param('feedbackId') feedbackId: string,
+  ) {
+    this.logger.log(`${this.LOGGER_PREFIX} delete instructor course feedback`);
+    return this.instructorsService.deleteCourseFeedback(
+      req.user.id,
+      courseId,
+      feedbackId,
+    );
   }
 
   @ApiOperation({ summary: 'Get instructor courses (only for instructor)' })
