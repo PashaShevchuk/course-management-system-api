@@ -1,6 +1,13 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  OneToMany,
+} from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { Course } from '../course/course.entity';
+import { StudentMark } from '../student-mark/student-mark.entity';
 
 @Entity()
 export class Lesson {
@@ -48,4 +55,7 @@ export class Lesson {
     default: () => 'CURRENT_TIMESTAMP',
   })
   updated_at: string;
+
+  @OneToMany(() => StudentMark, (studentMark) => studentMark.lesson)
+  marks: StudentMark[];
 }
