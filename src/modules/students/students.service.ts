@@ -20,6 +20,7 @@ import { UpdateStudentDto } from './dto/update-student.dto';
 import { StudentCourse } from '../../db/entities/student-course/student-course.entity';
 import { Course } from '../../db/entities/course/course.entity';
 import { Lesson } from '../../db/entities/lesson/lesson.entity';
+import { CourseFeedback } from '../../db/entities/course-feedback/course-feedback.entity';
 
 @Injectable()
 export class StudentsService {
@@ -33,6 +34,8 @@ export class StudentsService {
     private readonly studentCourseRepository: Repository<StudentCourse>,
     @InjectRepository(Lesson)
     private readonly lessonRepository: Repository<Lesson>,
+    @InjectRepository(CourseFeedback)
+    private readonly courseFeedbackRepository: Repository<CourseFeedback>,
     @Inject(forwardRef(() => AuthService))
     private readonly authService: AuthService,
     private readonly configService: ConfigService,
@@ -279,5 +282,32 @@ export class StudentsService {
     });
 
     return lessons;
+  }
+
+  async getCourseFeedback(
+    studentId: string,
+    courseId: string,
+  ): Promise<CourseFeedback> {
+    this.logger.log(`${this.LOGGER_PREFIX} get student course feedback`);
+
+    const studentCourse = await this.studentCourseRepository.findOne({
+      where: {
+        student: { id: studentId },
+        course: { id: courseId },
+      },
+    });
+
+    if (!studentCourse) {
+      throw new HttpException('Course not found', HttpStatus.NOT_FOUND);
+    }
+
+    const courseFeedback = await this.courseFeedbackRepository.findOne({
+      where: {
+        course: { id: courseId },
+        student: { id: studentId },
+      },
+    });
+
+    return courseFeedback;
   }
 }

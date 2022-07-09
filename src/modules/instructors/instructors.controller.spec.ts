@@ -279,4 +279,25 @@ describe('InstructorsController', () => {
       );
     });
   });
+
+  describe('getCourseFeedbacks', () => {
+    it('should get course feedbacks', async () => {
+      const reqMock = { user: { id: instructorIdMock } };
+      const result = [new CourseFeedback()];
+
+      jest
+        .spyOn(instructorsService, 'getCourseFeedbacks')
+        .mockImplementation(() => Promise.resolve(result));
+
+      await instructorsController.getCourseFeedbacks(reqMock, courseIdMock);
+
+      expect(instructorsService.getCourseFeedbacks).toHaveBeenCalledWith(
+        reqMock.user.id,
+        courseIdMock,
+      );
+      expect(
+        await instructorsController.getCourseFeedbacks(reqMock, courseIdMock),
+      ).toBe(result);
+    });
+  });
 });

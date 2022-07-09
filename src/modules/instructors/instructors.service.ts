@@ -321,4 +321,31 @@ export class InstructorsService {
       throw err;
     }
   }
+
+  async getCourseFeedbacks(
+    instructorId: string,
+    courseId: string,
+  ): Promise<CourseFeedback[]> {
+    this.logger.log(`${this.LOGGER_PREFIX} get instructor course feedbacks`);
+
+    const instructorCourse = await this.instructorCourseRepository.findOne({
+      where: {
+        instructor: { id: instructorId },
+        course: { id: courseId },
+      },
+    });
+
+    if (!instructorCourse) {
+      throw new HttpException('Course not found', HttpStatus.NOT_FOUND);
+    }
+
+    const courseFeedbacks = await this.courseFeedbackRepository.find({
+      where: {
+        course: { id: courseId },
+        instructor: { id: instructorId },
+      },
+    });
+
+    return courseFeedbacks;
+  }
 }

@@ -29,6 +29,7 @@ import { Lesson } from '../../db/entities/lesson/lesson.entity';
 import { studentLessonsExampleDto } from '../students/dto/student-lessons-example.dto';
 import { Student } from '../../db/entities/student/student.entity';
 import { CreateFeedbackDto } from './dto/create-feedback.dto';
+import { CourseFeedback } from '../../db/entities/course-feedback/course-feedback.entity';
 
 @ApiTags('Instructor')
 @Controller('instructors')
@@ -133,6 +134,21 @@ export class InstructorsController {
       courseId,
       createFeedbackDto,
     );
+  }
+
+  @ApiOperation({
+    summary: 'Get instructor course feedbacks (only for instructor)',
+  })
+  @ApiResponse({ type: [CourseFeedback] })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoles.INSTRUCTOR)
+  @Get('courses/:id/feedbacks')
+  async getCourseFeedbacks(
+    @Req() req,
+    @Param('id') courseId: string,
+  ): Promise<CourseFeedback[]> {
+    this.logger.log(`${this.LOGGER_PREFIX} get instructor course feedbacks`);
+    return this.instructorsService.getCourseFeedbacks(req.user.id, courseId);
   }
 
   @ApiOperation({ summary: 'Get instructor courses (only for instructor)' })

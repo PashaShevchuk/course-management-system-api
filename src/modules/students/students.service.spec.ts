@@ -9,6 +9,7 @@ import { StudentCourse } from '../../db/entities/student-course/student-course.e
 import { Lesson } from '../../db/entities/lesson/lesson.entity';
 import { EmailTemplates, UserRoles } from '../../constants';
 import { HttpException, HttpStatus } from '@nestjs/common';
+import { CourseFeedback } from '../../db/entities/course-feedback/course-feedback.entity';
 
 const mockRepository = () => ({
   find: jest.fn(),
@@ -84,12 +85,22 @@ const userExistError = new HttpException(
   HttpStatus.BAD_REQUEST,
 );
 const notFoundError = new HttpException('Data not found', HttpStatus.NOT_FOUND);
+const courseFeedbackDataDBMock = {
+  id: 'id',
+  text: 'text',
+  studentId: studentIdMock,
+  courseId: courseIdMock,
+  instructorId: 'instructorIdMock',
+  created_at: '2022-06-17T15:29:38.996Z',
+  updated_at: '2022-06-17T15:29:38.996Z',
+};
 
 describe('StudentsService', () => {
   let studentsService: StudentsService;
   let studentRepository;
   let studentCourseRepository;
   let lessonRepository;
+  let courseFeedbackRepository;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -105,6 +116,10 @@ describe('StudentsService', () => {
         },
         {
           provide: getRepositoryToken(Lesson),
+          useFactory: mockRepository,
+        },
+        {
+          provide: getRepositoryToken(CourseFeedback),
           useFactory: mockRepository,
         },
         {
@@ -126,6 +141,7 @@ describe('StudentsService', () => {
     studentRepository = module.get(getRepositoryToken(Student));
     studentCourseRepository = module.get(getRepositoryToken(StudentCourse));
     lessonRepository = module.get(getRepositoryToken(Lesson));
+    courseFeedbackRepository = module.get(getRepositoryToken(CourseFeedback));
   });
 
   afterEach(() => jest.clearAllMocks());
@@ -459,6 +475,44 @@ describe('StudentsService', () => {
       await expect(
         studentsService.getStudentCourseLessons(studentIdMock, courseIdMock),
       ).rejects.toThrow(notFoundError);
+    });
+  });
+
+  describe('getCourseFeedback', () => {
+    it('should get student course feedback', async () => {
+      studentCourseRepository.findOne.mockResolvedValue(courseDataDBMock);
+      courseFeedbackRepository.findOne.mockResolvedValue(
+        courseFeedbackDataDBMock,
+      );
+
+      const result = await studentsService.getCourseFeedback(
+        studentIdMock,
+        courseIdMock,
+      );
+
+      expect(studentCourseRepository.findOne).toHaveBeenCalledWith({
+        where: {
+          student: { id: studentIdMock },
+          course: { id: courseIdMock },
+        },
+      });
+      expect(courseFeedbackRepository.findOne).toHaveBeenCalledWith({
+        where: {
+          course: { id: courseIdMock },
+          student: { id: studentIdMock },
+        },
+      });
+      expect(result).toEqual(courseFeedbackDataDBMock);
+    });
+
+    it('should throw an error if course is not found', async () => {
+      studentCourseRepository.findOne.mockResolvedValue(null);
+
+      await expect(
+        studentsService.getCourseFeedback(studentIdMock, courseIdMock),
+      ).rejects.toThrow(
+        new HttpException('Course not found', HttpStatus.NOT_FOUND),
+      );
     });
   });
 });

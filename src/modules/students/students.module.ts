@@ -9,10 +9,11 @@ import { StudentsController } from './students.controller';
 import { Student } from '../../db/entities/student/student.entity';
 import { StudentCourse } from '../../db/entities/student-course/student-course.entity';
 import { Lesson } from '../../db/entities/lesson/lesson.entity';
+import { CourseFeedback } from '../../db/entities/course-feedback/course-feedback.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Student, StudentCourse, Lesson]),
+    TypeOrmModule.forFeature([Student, StudentCourse, Lesson, CourseFeedback]),
     forwardRef(() => AuthModule),
     ConfigModule,
     RedisModule,

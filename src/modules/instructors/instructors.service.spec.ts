@@ -597,4 +597,40 @@ describe('InstructorsService', () => {
       ).rejects.toThrow(customErr);
     });
   });
+
+  describe('getCourseFeedbacks', () => {
+    it('should get instructor course feedbacks', async () => {
+      instructorCourseRepository.findOne.mockResolvedValue(courseDataDBMock);
+      courseFeedbackRepository.find.mockResolvedValue(courseFeedbackDataDBMock);
+
+      const result = await instructorsService.getCourseFeedbacks(
+        instructorIdMock,
+        courseIdMock,
+      );
+
+      expect(instructorCourseRepository.findOne).toHaveBeenCalledWith({
+        where: {
+          instructor: { id: instructorIdMock },
+          course: { id: courseIdMock },
+        },
+      });
+      expect(courseFeedbackRepository.find).toHaveBeenCalledWith({
+        where: {
+          course: { id: courseIdMock },
+          instructor: { id: instructorIdMock },
+        },
+      });
+      expect(result).toEqual(courseFeedbackDataDBMock);
+    });
+
+    it('should throw an error if course is not found', async () => {
+      instructorCourseRepository.findOne.mockResolvedValue(null);
+
+      await expect(
+        instructorsService.getCourseFeedbacks(instructorIdMock, courseIdMock),
+      ).rejects.toThrow(
+        new HttpException('Course not found', HttpStatus.NOT_FOUND),
+      );
+    });
+  });
 });

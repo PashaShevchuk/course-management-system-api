@@ -24,19 +24,16 @@ export class CourseFeedback {
   })
   text: string;
 
-  @ApiProperty()
   @ManyToOne(() => Course, (course) => course.courseFeedbacks, {
     onDelete: 'CASCADE',
   })
   course: Course;
 
-  @ApiProperty()
   @ManyToOne(() => Instructor, (instructor) => instructor.instructorFeedbacks, {
     onDelete: 'CASCADE',
   })
   instructor: Instructor;
 
-  @ApiProperty()
   @ManyToOne(() => Student, (student) => student.studentFeedbacks, {
     onDelete: 'CASCADE',
   })

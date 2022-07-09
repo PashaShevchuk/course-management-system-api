@@ -16,6 +16,7 @@ import { GetStudentsByStatusDto } from './dto/get-students--by-status.dto';
 import { UpdateStudentStatusDto } from './dto/update-student-status.dto';
 import { UpdateStudentDto } from './dto/update-student.dto';
 import { Course } from '../../db/entities/course/course.entity';
+import { CourseFeedback } from '../../db/entities/course-feedback/course-feedback.entity';
 
 const mockRepository = () => ({
   find: jest.fn(),
@@ -44,6 +45,10 @@ describe('StudentsController', () => {
         },
         {
           provide: getRepositoryToken(Lesson),
+          useFactory: mockRepository,
+        },
+        {
+          provide: getRepositoryToken(CourseFeedback),
           useFactory: mockRepository,
         },
         {
@@ -236,6 +241,27 @@ describe('StudentsController', () => {
       await studentsController.delete(studentIdMock);
 
       expect(studentsService.deleteStudentById).toBeCalledWith(studentIdMock);
+    });
+  });
+
+  describe('getCourseFeedbacks', () => {
+    it('should get student course feedback', async () => {
+      const reqMock = { user: { id: studentIdMock } };
+      const result = new CourseFeedback();
+
+      jest
+        .spyOn(studentsService, 'getCourseFeedback')
+        .mockImplementation(() => Promise.resolve(result));
+
+      await studentsController.getCourseFeedback(reqMock, studentIdMock);
+
+      expect(studentsService.getCourseFeedback).toHaveBeenCalledWith(
+        reqMock.user.id,
+        studentIdMock,
+      );
+      expect(
+        await studentsController.getCourseFeedback(reqMock, studentIdMock),
+      ).toBe(result);
     });
   });
 });
