@@ -7,8 +7,9 @@ import { ConfigService } from '../../config/config.service';
 import { RedisService } from '../redis/redis.service';
 import { AuthService } from '../auth/auth.service';
 import { CreateLessonDto } from './dto/create-lesson.dto';
+import { StudentMark } from '../../db/entities/student-mark/student-mark.entity';
 
-const mockLessonRepository = () => ({
+const mockRepository = () => ({
   find: jest.fn(),
   findOne: jest.fn(),
   save: jest.fn(),
@@ -27,7 +28,11 @@ describe('LessonsController', () => {
         LessonsService,
         {
           provide: getRepositoryToken(Lesson),
-          useFactory: mockLessonRepository,
+          useFactory: mockRepository,
+        },
+        {
+          provide: getRepositoryToken(StudentMark),
+          useFactory: mockRepository,
         },
         {
           provide: AuthService,

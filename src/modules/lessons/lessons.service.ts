@@ -3,6 +3,8 @@ import { CreateLessonDto } from './dto/create-lesson.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Lesson } from '../../db/entities/lesson/lesson.entity';
 import { Repository } from 'typeorm';
+import { StudentMark } from '../../db/entities/student-mark/student-mark.entity';
+import { lessonMarksExampleDto } from '../instructors/dto/lesson-marks-example.dto';
 
 @Injectable()
 export class LessonsService {
@@ -12,6 +14,8 @@ export class LessonsService {
   constructor(
     @InjectRepository(Lesson)
     private readonly lessonRepository: Repository<Lesson>,
+    @InjectRepository(StudentMark)
+    private readonly studentMarkRepository: Repository<StudentMark>,
   ) {}
 
   async createLesson(createLessonDto: CreateLessonDto): Promise<Lesson> {
@@ -84,6 +88,54 @@ export class LessonsService {
     this.logger.log(`${this.LOGGER_PREFIX} delete lesson by ID`);
 
     const result = await this.lessonRepository.delete(id);
+
+    if (!result.affected) {
+      throw new HttpException('Data not found', HttpStatus.NOT_FOUND);
+    }
+  }
+
+  async getLessonMarks(
+    lessonId: string,
+  ): Promise<typeof lessonMarksExampleDto[]> {
+    this.logger.log(`${this.LOGGER_PREFIX} get lesson marks`);
+
+    const marksData = await this.studentMarkRepository.find({
+      where: { lesson: { id: lessonId } },
+      relations: {
+        lesson: true,
+        student: true,
+      },
+    });
+
+    const marks = marksData.length
+      ? marksData.map((item) => ({
+          id: item.id,
+          mark: item.mark,
+          created_at: item.created_at,
+          updated_at: item.updated_at,
+          lesson: {
+            id: item.lesson.id,
+            title: item.lesson.title,
+            highest_mark: item.lesson.highest_mark,
+          },
+          student: {
+            id: item.student.id,
+            first_name: item.student.first_name,
+            last_name: item.student.last_name,
+          },
+        }))
+      : [];
+
+    return marks;
+  }
+
+  async deleteMark(lessonId: string, markId: string) {
+    this.logger.log(`${this.LOGGER_PREFIX} delete mark`);
+
+    const result = await this.studentMarkRepository.delete({
+      id: markId,
+      lesson: { id: lessonId },
+    });
 
     if (!result.affected) {
       throw new HttpException('Data not found', HttpStatus.NOT_FOUND);

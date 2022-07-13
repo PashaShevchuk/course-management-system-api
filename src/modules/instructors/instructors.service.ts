@@ -25,6 +25,10 @@ import { Student } from '../../db/entities/student/student.entity';
 import { CreateFeedbackDto } from './dto/create-feedback.dto';
 import { CourseFeedback } from '../../db/entities/course-feedback/course-feedback.entity';
 import { UpdateFeedbackDto } from './dto/update-feedback.dto';
+import { PutMarkForStudentDto } from './dto/put-mark-for-student.dto';
+import { StudentMark } from '../../db/entities/student-mark/student-mark.entity';
+import { UpdateMarkDto } from './dto/update-mark.dto';
+import { lessonMarksExampleDto } from './dto/lesson-marks-example.dto';
 
 @Injectable()
 export class InstructorsService {
@@ -42,6 +46,8 @@ export class InstructorsService {
     private readonly studentCourseRepository: Repository<StudentCourse>,
     @InjectRepository(CourseFeedback)
     private readonly courseFeedbackRepository: Repository<CourseFeedback>,
+    @InjectRepository(StudentMark)
+    private readonly studentMarkRepository: Repository<StudentMark>,
     @Inject(forwardRef(() => AuthService))
     private readonly authService: AuthService,
     private readonly configService: ConfigService,
@@ -390,5 +396,118 @@ export class InstructorsService {
     if (!result.affected) {
       throw new HttpException('Data not found', HttpStatus.NOT_FOUND);
     }
+  }
+
+  async putMarkForStudent(
+    instructorId: string,
+    putMarkForStudentDto: PutMarkForStudentDto,
+  ) {
+    this.logger.log(`${this.LOGGER_PREFIX} put a mark for a student`);
+
+    const lesson = await this.lessonRepository.findOne({
+      where: {
+        id: putMarkForStudentDto.lesson_id,
+        course: {
+          id: putMarkForStudentDto.course_id,
+          instructorCourses: { instructor: { id: instructorId } },
+          studentCourses: { student: { id: putMarkForStudentDto.student_id } },
+        },
+      },
+    });
+
+    if (!lesson) {
+      throw new HttpException('Data not found', HttpStatus.NOT_FOUND);
+    }
+
+    if (putMarkForStudentDto.mark > lesson.highest_mark) {
+      throw new HttpException(
+        `The highest mark for this lesson is ${lesson.highest_mark}`,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    try {
+      const studentMarkData = new StudentMark();
+      studentMarkData.mark = putMarkForStudentDto.mark;
+      studentMarkData.student = <any>{ id: putMarkForStudentDto.student_id };
+      studentMarkData.lesson = <any>{ id: putMarkForStudentDto.lesson_id };
+
+      await this.studentMarkRepository.save(studentMarkData);
+    } catch (err) {
+      if (err.code === '23505') {
+        throw new HttpException(
+          'You have already put a mark for this student',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      throw err;
+    }
+  }
+
+  async updateStudentMark(instructorId: string, updateMarkDto: UpdateMarkDto) {
+    this.logger.log(`${this.LOGGER_PREFIX} put a mark for a student`);
+
+    const studentMark = await this.studentMarkRepository.findOne({
+      where: {
+        id: updateMarkDto.mark_id,
+        lesson: {
+          course: { instructorCourses: { instructor: { id: instructorId } } },
+        },
+      },
+    });
+
+    if (!studentMark) {
+      throw new HttpException('Data not found', HttpStatus.NOT_FOUND);
+    }
+
+    studentMark.mark = updateMarkDto.mark;
+
+    await this.studentMarkRepository.save(studentMark);
+  }
+
+  async getLessonMarks(
+    instructorId: string,
+    courseId: string,
+    lessonId: string,
+  ): Promise<typeof lessonMarksExampleDto[]> {
+    this.logger.log(`${this.LOGGER_PREFIX} get course lesson marks`);
+
+    const marksData = await this.studentMarkRepository.find({
+      where: {
+        lesson: {
+          id: lessonId,
+          course: {
+            id: courseId,
+            instructorCourses: { instructor: { id: instructorId } },
+          },
+        },
+      },
+      relations: {
+        lesson: true,
+        student: true,
+      },
+    });
+
+    const marks = marksData.length
+      ? marksData.map((item) => ({
+          id: item.id,
+          mark: item.mark,
+          created_at: item.created_at,
+          updated_at: item.updated_at,
+          lesson: {
+            id: item.lesson.id,
+            title: item.lesson.title,
+            highest_mark: item.lesson.highest_mark,
+          },
+          student: {
+            id: item.student.id,
+            first_name: item.student.first_name,
+            last_name: item.student.last_name,
+          },
+        }))
+      : [];
+
+    return marks;
   }
 }

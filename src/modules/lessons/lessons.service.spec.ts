@@ -3,8 +3,9 @@ import { LessonsService } from './lessons.service';
 import { Lesson } from '../../db/entities/lesson/lesson.entity';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { HttpException, HttpStatus } from '@nestjs/common';
+import { StudentMark } from '../../db/entities/student-mark/student-mark.entity';
 
-const mockLessonRepository = () => ({
+const mockRepository = () => ({
   find: jest.fn(),
   findOne: jest.fn(),
   save: jest.fn(),
@@ -42,7 +43,11 @@ describe('LessonsService', () => {
         LessonsService,
         {
           provide: getRepositoryToken(Lesson),
-          useFactory: mockLessonRepository,
+          useFactory: mockRepository,
+        },
+        {
+          provide: getRepositoryToken(StudentMark),
+          useFactory: mockRepository,
         },
       ],
     }).compile();

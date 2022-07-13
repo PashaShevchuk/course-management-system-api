@@ -11,6 +11,7 @@ import { InstructorCourse } from '../../db/entities/instructor-course/instructor
 import { Lesson } from '../../db/entities/lesson/lesson.entity';
 import { StudentCourse } from '../../db/entities/student-course/student-course.entity';
 import { CourseFeedback } from '../../db/entities/course-feedback/course-feedback.entity';
+import { StudentMark } from '../../db/entities/student-mark/student-mark.entity';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { CourseFeedback } from '../../db/entities/course-feedback/course-feedbac
       Lesson,
       StudentCourse,
       CourseFeedback,
+      StudentMark,
     ]),
     forwardRef(() => AuthModule),
     ConfigModule,

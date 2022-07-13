@@ -20,7 +20,7 @@ export class StudentMark {
   @Column('int', {
     nullable: false,
   })
-  mark: string;
+  mark: number;
 
   @ManyToOne(() => Student, (student) => student.marks, {
     onDelete: 'CASCADE',

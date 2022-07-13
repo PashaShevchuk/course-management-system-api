@@ -31,6 +31,9 @@ import { Student } from '../../db/entities/student/student.entity';
 import { CreateFeedbackDto } from './dto/create-feedback.dto';
 import { CourseFeedback } from '../../db/entities/course-feedback/course-feedback.entity';
 import { UpdateFeedbackDto } from './dto/update-feedback.dto';
+import { PutMarkForStudentDto } from './dto/put-mark-for-student.dto';
+import { UpdateMarkDto } from './dto/update-mark.dto';
+import { lessonMarksExampleDto } from './dto/lesson-marks-example.dto';
 
 @ApiTags('Instructor')
 @Controller('instructors')
@@ -233,6 +236,57 @@ export class InstructorsController {
     return this.instructorsService.getInstructorCourseStudents(
       req.user.id,
       courseId,
+    );
+  }
+
+  @ApiOperation({
+    summary: 'Get course lesson marks (only for instructor)',
+  })
+  @ApiResponse({ schema: { example: lessonMarksExampleDto } })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoles.INSTRUCTOR)
+  @Get('courses/:id/lessons/:lessonId/marks')
+  async getLessonMarks(
+    @Req() req,
+    @Param('id') courseId: string,
+    @Param('lessonId') lessonId: string,
+  ): Promise<typeof lessonMarksExampleDto[]> {
+    this.logger.log(`${this.LOGGER_PREFIX} get course lesson marks`);
+    return this.instructorsService.getLessonMarks(
+      req.user.id,
+      courseId,
+      lessonId,
+    );
+  }
+
+  @ApiOperation({
+    summary: 'Put a mark for a student (only for instructor)',
+  })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoles.INSTRUCTOR)
+  @Post('marks')
+  async putMarkForStudent(
+    @Req() req,
+    @Body() putMarkForStudentDto: PutMarkForStudentDto,
+  ) {
+    this.logger.log(`${this.LOGGER_PREFIX} put a mark for a student`);
+    return this.instructorsService.putMarkForStudent(
+      req.user.id,
+      putMarkForStudentDto,
+    );
+  }
+
+  @ApiOperation({
+    summary: 'Update a student mark (only for instructor)',
+  })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoles.INSTRUCTOR)
+  @Put('marks')
+  async updateStudentMark(@Req() req, @Body() updateMarkDto: UpdateMarkDto) {
+    this.logger.log(`${this.LOGGER_PREFIX} update a student mark`);
+    return this.instructorsService.updateStudentMark(
+      req.user.id,
+      updateMarkDto,
     );
   }
 

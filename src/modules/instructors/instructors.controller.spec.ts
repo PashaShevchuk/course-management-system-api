@@ -20,6 +20,7 @@ import { Student } from '../../db/entities/student/student.entity';
 import { CourseFeedback } from '../../db/entities/course-feedback/course-feedback.entity';
 import { CreateFeedbackDto } from './dto/create-feedback.dto';
 import { UpdateFeedbackDto } from './dto/update-feedback.dto';
+import { StudentMark } from '../../db/entities/student-mark/student-mark.entity';
 
 const mockRepository = () => ({
   find: jest.fn(),
@@ -57,6 +58,10 @@ describe('InstructorsController', () => {
         },
         {
           provide: getRepositoryToken(CourseFeedback),
+          useFactory: mockRepository,
+        },
+        {
+          provide: getRepositoryToken(StudentMark),
           useFactory: mockRepository,
         },
         {
