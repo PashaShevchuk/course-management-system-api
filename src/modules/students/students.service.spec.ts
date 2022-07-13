@@ -10,6 +10,7 @@ import { Lesson } from '../../db/entities/lesson/lesson.entity';
 import { EmailTemplates, UserRoles } from '../../constants';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { CourseFeedback } from '../../db/entities/course-feedback/course-feedback.entity';
+import { StudentMark } from '../../db/entities/student-mark/student-mark.entity';
 
 const mockRepository = () => ({
   find: jest.fn(),
@@ -31,6 +32,8 @@ const mockedMailService = {
 };
 const studentIdMock = 'student-id';
 const courseIdMock = 'course-id';
+const lessonIdMock = 'lesson-id';
+const markIdMock = 'mark-id';
 const hashMock = 'hash';
 const createStudentDataMock = {
   first_name: 'New Admin',
@@ -94,6 +97,14 @@ const courseFeedbackDataDBMock = {
   created_at: '2022-06-17T15:29:38.996Z',
   updated_at: '2022-06-17T15:29:38.996Z',
 };
+const studentMarkDataMock = {
+  id: markIdMock,
+  mark: 100,
+  student_id: studentIdMock,
+  lesson_id: lessonIdMock,
+  created_at: '2022-06-17T15:29:38.996Z',
+  updated_at: '2022-06-17T15:29:38.996Z',
+};
 
 describe('StudentsService', () => {
   let studentsService: StudentsService;
@@ -101,6 +112,7 @@ describe('StudentsService', () => {
   let studentCourseRepository;
   let lessonRepository;
   let courseFeedbackRepository;
+  let studentMarkRepository;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -123,6 +135,10 @@ describe('StudentsService', () => {
           useFactory: mockRepository,
         },
         {
+          provide: getRepositoryToken(StudentMark),
+          useFactory: mockRepository,
+        },
+        {
           provide: AuthService,
           useValue: mockedAuthService,
         },
@@ -142,6 +158,7 @@ describe('StudentsService', () => {
     studentCourseRepository = module.get(getRepositoryToken(StudentCourse));
     lessonRepository = module.get(getRepositoryToken(Lesson));
     courseFeedbackRepository = module.get(getRepositoryToken(CourseFeedback));
+    studentMarkRepository = module.get(getRepositoryToken(StudentMark));
   });
 
   afterEach(() => jest.clearAllMocks());
@@ -513,6 +530,29 @@ describe('StudentsService', () => {
       ).rejects.toThrow(
         new HttpException('Course not found', HttpStatus.NOT_FOUND),
       );
+    });
+  });
+
+  describe('getLessonMark', () => {
+    it('should get student lesson mark', async () => {
+      studentMarkRepository.findOne.mockResolvedValue(studentMarkDataMock);
+
+      const result = await studentsService.getLessonMark(
+        studentIdMock,
+        courseIdMock,
+        lessonIdMock,
+      );
+
+      expect(studentMarkRepository.findOne).toHaveBeenCalledWith({
+        where: {
+          student: { id: studentIdMock },
+          lesson: {
+            id: lessonIdMock,
+            course: { id: courseIdMock },
+          },
+        },
+      });
+      expect(result).toEqual(studentMarkDataMock);
     });
   });
 });

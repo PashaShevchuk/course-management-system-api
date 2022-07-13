@@ -484,7 +484,6 @@ export class InstructorsService {
         },
       },
       relations: {
-        lesson: true,
         student: true,
       },
     });
@@ -495,11 +494,6 @@ export class InstructorsService {
           mark: item.mark,
           created_at: item.created_at,
           updated_at: item.updated_at,
-          lesson: {
-            id: item.lesson.id,
-            title: item.lesson.title,
-            highest_mark: item.lesson.highest_mark,
-          },
           student: {
             id: item.student.id,
             first_name: item.student.first_name,

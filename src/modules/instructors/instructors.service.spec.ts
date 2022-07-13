@@ -35,6 +35,8 @@ const hashMock = 'hash';
 const studentIdMock = 'student-id';
 const courseIdMock = 'course-id';
 const feedbackIdMock = 'feedback-id';
+const lessonIdMock = 'lesson-id';
+const markIdMock = 'mark-id';
 const createInstructorDataMock = {
   first_name: 'New Admin',
   last_name: 'New Admin',
@@ -116,6 +118,31 @@ const courseFeedbackDataDBMock = {
   created_at: '2022-06-17T15:29:38.996Z',
   updated_at: '2022-06-17T15:29:38.996Z',
 };
+const studentMarkDataMock = {
+  id: markIdMock,
+  mark: 100,
+  student_id: studentIdMock,
+  lesson_id: lessonIdMock,
+  created_at: '2022-06-17T15:29:38.996Z',
+  updated_at: '2022-06-17T15:29:38.996Z',
+};
+const lessonMarkDataMock = {
+  id: lessonIdMock,
+  mark: 10,
+  created_at: '2022-07-10T09:34:44.807Z',
+  updated_at: '2022-07-10T09:34:44.807Z',
+  student: {
+    id: 'a1e8a51f-55fb-41a0-9106-6eed481c47db',
+    first_name: 'John',
+    last_name: 'Doe',
+    email: 'john@email.com',
+    birth_date: '1995-01-01',
+    is_active: true,
+    role: UserRoles.STUDENT,
+    created_at: '2022-06-17T12:21:28.478Z',
+    updated_at: '2022-06-17T12:21:28.478Z',
+  },
+};
 
 describe('InstructorsService', () => {
   let instructorsService: InstructorsService;
@@ -124,6 +151,7 @@ describe('InstructorsService', () => {
   let instructorCourseRepository;
   let lessonRepository;
   let courseFeedbackRepository;
+  let studentMarkRepository;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -176,6 +204,7 @@ describe('InstructorsService', () => {
     );
     lessonRepository = module.get(getRepositoryToken(Lesson));
     courseFeedbackRepository = module.get(getRepositoryToken(CourseFeedback));
+    studentMarkRepository = module.get(getRepositoryToken(StudentMark));
   });
 
   afterEach(() => jest.clearAllMocks());
@@ -716,6 +745,215 @@ describe('InstructorsService', () => {
           feedbackIdMock,
         ),
       ).rejects.toThrow(notFoundError);
+    });
+  });
+
+  describe('putMarkForStudent', () => {
+    const markDataMock = {
+      mark: 80,
+      student_id: studentIdMock,
+      lesson_id: lessonIdMock,
+      course_id: courseIdMock,
+    };
+
+    it('should put mark for student', async () => {
+      lessonRepository.findOne.mockResolvedValue(lessonDataMock);
+      studentMarkRepository.save.mockResolvedValue();
+
+      await instructorsService.putMarkForStudent(
+        instructorIdMock,
+        markDataMock,
+      );
+
+      expect(lessonRepository.findOne).toHaveBeenCalledWith({
+        where: {
+          id: markDataMock.lesson_id,
+          course: {
+            id: markDataMock.course_id,
+            instructorCourses: { instructor: { id: instructorIdMock } },
+            studentCourses: { student: { id: markDataMock.student_id } },
+          },
+        },
+      });
+      expect(studentMarkRepository.save).toHaveBeenCalled();
+    });
+
+    it('should throw an error if a lesson is not found', async () => {
+      lessonRepository.findOne.mockResolvedValue(null);
+
+      await expect(
+        instructorsService.putMarkForStudent(instructorIdMock, markDataMock),
+      ).rejects.toThrow(
+        new HttpException('Data not found', HttpStatus.NOT_FOUND),
+      );
+    });
+
+    it('should throw an error if a mark in higher than lesson highest mark', async () => {
+      const markDataMock = {
+        mark: 110,
+        student_id: studentIdMock,
+        lesson_id: lessonIdMock,
+        course_id: courseIdMock,
+      };
+
+      lessonRepository.findOne.mockResolvedValue(lessonDataMock);
+
+      await expect(
+        instructorsService.putMarkForStudent(instructorIdMock, markDataMock),
+      ).rejects.toThrow(
+        new HttpException(
+          `The highest mark for this lesson is ${lessonDataMock.highest_mark}`,
+          HttpStatus.BAD_REQUEST,
+        ),
+      );
+    });
+
+    it('should throw an error if instructor has already put a mark', async () => {
+      lessonRepository.findOne.mockResolvedValue(lessonDataMock);
+      studentMarkRepository.save.mockRejectedValue({ code: '23505' });
+
+      try {
+        await instructorsService.putMarkForStudent(
+          instructorIdMock,
+          markDataMock,
+        );
+      } catch (err) {
+        expect(lessonRepository.findOne).toHaveBeenCalledWith({
+          where: {
+            id: markDataMock.lesson_id,
+            course: {
+              id: markDataMock.course_id,
+              instructorCourses: { instructor: { id: instructorIdMock } },
+              studentCourses: { student: { id: markDataMock.student_id } },
+            },
+          },
+        });
+        expect(studentMarkRepository.save).toHaveBeenCalled();
+        expect(err).toEqual(
+          new HttpException(
+            'You have already put a mark for this student',
+            HttpStatus.BAD_REQUEST,
+          ),
+        );
+      }
+    });
+
+    it('should throw an error', async () => {
+      const customErr = new Error('message');
+
+      lessonRepository.findOne.mockResolvedValue(lessonDataMock);
+      studentMarkRepository.save.mockRejectedValue(customErr);
+
+      await expect(
+        instructorsService.putMarkForStudent(instructorIdMock, markDataMock),
+      ).rejects.toThrow(customErr);
+    });
+  });
+
+  describe('updateStudentMark', () => {
+    const markUpdateDataMock = {
+      mark_id: markIdMock,
+      mark: 80,
+    };
+
+    it('should update student mark', async () => {
+      studentMarkRepository.findOne.mockResolvedValue(studentMarkDataMock);
+
+      await instructorsService.updateStudentMark(
+        instructorIdMock,
+        markUpdateDataMock,
+      );
+
+      expect(studentMarkRepository.findOne).toHaveBeenCalledWith({
+        where: {
+          id: markUpdateDataMock.mark_id,
+          lesson: {
+            course: {
+              instructorCourses: { instructor: { id: instructorIdMock } },
+            },
+          },
+        },
+      });
+      expect(studentMarkRepository.save).toHaveBeenCalled();
+    });
+
+    it('should throw an error if a lesson is not found', async () => {
+      studentMarkRepository.findOne.mockResolvedValue(null);
+
+      await expect(
+        instructorsService.updateStudentMark(
+          instructorIdMock,
+          markUpdateDataMock,
+        ),
+      ).rejects.toThrow(
+        new HttpException('Data not found', HttpStatus.NOT_FOUND),
+      );
+    });
+  });
+
+  describe('getLessonMarks', () => {
+    it('should get lesson marks', async () => {
+      studentMarkRepository.find.mockResolvedValue([lessonMarkDataMock]);
+
+      const result = await instructorsService.getLessonMarks(
+        instructorIdMock,
+        courseIdMock,
+        lessonIdMock,
+      );
+
+      expect(studentMarkRepository.find).toHaveBeenCalledWith({
+        where: {
+          lesson: {
+            id: lessonIdMock,
+            course: {
+              id: courseIdMock,
+              instructorCourses: { instructor: { id: instructorIdMock } },
+            },
+          },
+        },
+        relations: {
+          student: true,
+        },
+      });
+      expect(result).toEqual([
+        {
+          id: lessonMarkDataMock.id,
+          mark: lessonMarkDataMock.mark,
+          created_at: lessonMarkDataMock.created_at,
+          updated_at: lessonMarkDataMock.updated_at,
+          student: {
+            id: lessonMarkDataMock.student.id,
+            first_name: lessonMarkDataMock.student.first_name,
+            last_name: lessonMarkDataMock.student.last_name,
+          },
+        },
+      ]);
+    });
+
+    it('should return an empty array', async () => {
+      studentMarkRepository.find.mockResolvedValue([]);
+
+      const result = await instructorsService.getLessonMarks(
+        instructorIdMock,
+        courseIdMock,
+        lessonIdMock,
+      );
+
+      expect(studentMarkRepository.find).toHaveBeenCalledWith({
+        where: {
+          lesson: {
+            id: lessonIdMock,
+            course: {
+              id: courseIdMock,
+              instructorCourses: { instructor: { id: instructorIdMock } },
+            },
+          },
+        },
+        relations: {
+          student: true,
+        },
+      });
+      expect(result).toEqual([]);
     });
   });
 });

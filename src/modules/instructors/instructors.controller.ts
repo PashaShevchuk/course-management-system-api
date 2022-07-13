@@ -204,24 +204,6 @@ export class InstructorsController {
   }
 
   @ApiOperation({
-    summary: 'Get instructor course lessons (only for instructor)',
-  })
-  @ApiResponse({ schema: { example: studentLessonsExampleDto } })
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRoles.INSTRUCTOR)
-  @Get('courses/:id/lessons')
-  async getInstructorCourseLessons(
-    @Req() req,
-    @Param('id') courseId: string,
-  ): Promise<Lesson[]> {
-    this.logger.log(`${this.LOGGER_PREFIX} get instructor course lessons`);
-    return this.instructorsService.getInstructorCourseLessons(
-      req.user.id,
-      courseId,
-    );
-  }
-
-  @ApiOperation({
     summary: 'Get instructor course students (only for instructor)',
   })
   @ApiResponse({ type: [Student] })
@@ -234,6 +216,24 @@ export class InstructorsController {
   ): Promise<Student[]> {
     this.logger.log(`${this.LOGGER_PREFIX} get instructor course students`);
     return this.instructorsService.getInstructorCourseStudents(
+      req.user.id,
+      courseId,
+    );
+  }
+
+  @ApiOperation({
+    summary: 'Get instructor course lessons (only for instructor)',
+  })
+  @ApiResponse({ schema: { example: studentLessonsExampleDto } })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoles.INSTRUCTOR)
+  @Get('courses/:id/lessons')
+  async getInstructorCourseLessons(
+    @Req() req,
+    @Param('id') courseId: string,
+  ): Promise<Lesson[]> {
+    this.logger.log(`${this.LOGGER_PREFIX} get instructor course lessons`);
+    return this.instructorsService.getInstructorCourseLessons(
       req.user.id,
       courseId,
     );

@@ -21,6 +21,7 @@ import { StudentCourse } from '../../db/entities/student-course/student-course.e
 import { Course } from '../../db/entities/course/course.entity';
 import { Lesson } from '../../db/entities/lesson/lesson.entity';
 import { CourseFeedback } from '../../db/entities/course-feedback/course-feedback.entity';
+import { StudentMark } from '../../db/entities/student-mark/student-mark.entity';
 
 @Injectable()
 export class StudentsService {
@@ -36,6 +37,8 @@ export class StudentsService {
     private readonly lessonRepository: Repository<Lesson>,
     @InjectRepository(CourseFeedback)
     private readonly courseFeedbackRepository: Repository<CourseFeedback>,
+    @InjectRepository(StudentMark)
+    private readonly studentMarkRepository: Repository<StudentMark>,
     @Inject(forwardRef(() => AuthService))
     private readonly authService: AuthService,
     private readonly configService: ConfigService,
@@ -309,5 +312,25 @@ export class StudentsService {
     });
 
     return courseFeedback;
+  }
+
+  async getLessonMark(
+    studentId: string,
+    courseId: string,
+    lessonId: string,
+  ): Promise<StudentMark> {
+    this.logger.log(`${this.LOGGER_PREFIX} get student lesson mark`);
+
+    const markData = await this.studentMarkRepository.findOne({
+      where: {
+        student: { id: studentId },
+        lesson: {
+          id: lessonId,
+          course: { id: courseId },
+        },
+      },
+    });
+
+    return markData;
   }
 }

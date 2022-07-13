@@ -29,6 +29,7 @@ import { Course } from '../../db/entities/course/course.entity';
 import { Lesson } from '../../db/entities/lesson/lesson.entity';
 import { studentLessonsExampleDto } from './dto/student-lessons-example.dto';
 import { CourseFeedback } from '../../db/entities/course-feedback/course-feedback.entity';
+import { StudentMark } from '../../db/entities/student-mark/student-mark.entity';
 
 @ApiTags('Student')
 @Controller('students')
@@ -136,6 +137,20 @@ export class StudentsController {
   ): Promise<Lesson[]> {
     this.logger.log(`${this.LOGGER_PREFIX} get student course lessons`);
     return this.studentsService.getStudentCourseLessons(req.user.id, courseId);
+  }
+
+  @ApiOperation({ summary: 'Get student lesson mark (only for student)' })
+  @ApiResponse({ type: StudentMark })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoles.STUDENT)
+  @Get('courses/:id/lessons/:lessonId/mark')
+  async getLessonMark(
+    @Req() req,
+    @Param('id') courseId: string,
+    @Param('lessonId') lessonId: string,
+  ): Promise<StudentMark> {
+    this.logger.log(`${this.LOGGER_PREFIX} get student lesson mark`);
+    return this.studentsService.getLessonMark(req.user.id, courseId, lessonId);
   }
 
   @ApiOperation({ summary: 'Get student course feedback (only for student)' })

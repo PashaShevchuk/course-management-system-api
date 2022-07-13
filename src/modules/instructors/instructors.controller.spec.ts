@@ -21,6 +21,8 @@ import { CourseFeedback } from '../../db/entities/course-feedback/course-feedbac
 import { CreateFeedbackDto } from './dto/create-feedback.dto';
 import { UpdateFeedbackDto } from './dto/update-feedback.dto';
 import { StudentMark } from '../../db/entities/student-mark/student-mark.entity';
+import { PutMarkForStudentDto } from './dto/put-mark-for-student.dto';
+import { UpdateMarkDto } from './dto/update-mark.dto';
 
 const mockRepository = () => ({
   find: jest.fn(),
@@ -30,6 +32,7 @@ const mockRepository = () => ({
 });
 const instructorIdMock = 'instructor-id';
 const courseIdMock = 'course-id';
+const lessonIdMock = 'lesson-id';
 
 describe('InstructorsController', () => {
   let instructorsController: InstructorsController;
@@ -349,6 +352,78 @@ describe('InstructorsController', () => {
         reqMock.user.id,
         courseIdMock,
         feedbackIdMock,
+      );
+    });
+  });
+
+  describe('getLessonMarks', () => {
+    it('should get lesson marks', async () => {
+      const reqMock = { user: { id: instructorIdMock } };
+      const result = [
+        {
+          id: 'd5eebb06-0d8c-4857-8625-d4a9921dc91c',
+          mark: 9,
+          created_at: '2022-07-10T09:34:44.807Z',
+          updated_at: '2022-07-10T09:34:44.807Z',
+          student: {
+            id: 'a1e8a51f-55fb-41a0-9106-6eed481c47db',
+            first_name: 'John',
+            last_name: 'Doe',
+          },
+        },
+      ];
+
+      jest
+        .spyOn(instructorsService, 'getLessonMarks')
+        .mockImplementation(() => Promise.resolve(result));
+
+      expect(
+        await instructorsController.getLessonMarks(
+          reqMock,
+          courseIdMock,
+          lessonIdMock,
+        ),
+      ).toBe(result);
+      expect(instructorsService.getLessonMarks).toHaveBeenCalledWith(
+        reqMock.user.id,
+        courseIdMock,
+        lessonIdMock,
+      );
+    });
+  });
+
+  describe('putMarkForStudent', () => {
+    it('should put mark for student', async () => {
+      const reqMock = { user: { id: instructorIdMock } };
+      const dto = new PutMarkForStudentDto();
+
+      jest
+        .spyOn(instructorsService, 'putMarkForStudent')
+        .mockImplementation(() => Promise.resolve());
+
+      await instructorsController.putMarkForStudent(reqMock, dto);
+
+      expect(instructorsService.putMarkForStudent).toHaveBeenCalledWith(
+        reqMock.user.id,
+        dto,
+      );
+    });
+  });
+
+  describe('updateStudentMark', () => {
+    it('should update student mark', async () => {
+      const reqMock = { user: { id: instructorIdMock } };
+      const dto = new UpdateMarkDto();
+
+      jest
+        .spyOn(instructorsService, 'updateStudentMark')
+        .mockImplementation(() => Promise.resolve());
+
+      await instructorsController.updateStudentMark(reqMock, dto);
+
+      expect(instructorsService.updateStudentMark).toHaveBeenCalledWith(
+        reqMock.user.id,
+        dto,
       );
     });
   });
