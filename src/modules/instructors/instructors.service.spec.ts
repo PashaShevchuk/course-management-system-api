@@ -12,6 +12,7 @@ import { StudentCourse } from '../../db/entities/student-course/student-course.e
 import { InstructorCourse } from '../../db/entities/instructor-course/instructor-course.entity';
 import { CourseFeedback } from '../../db/entities/course-feedback/course-feedback.entity';
 import { StudentMark } from '../../db/entities/student-mark/student-mark.entity';
+import { DataSource } from 'typeorm';
 
 const mockRepository = () => ({
   find: jest.fn(),
@@ -180,6 +181,10 @@ describe('InstructorsService', () => {
         {
           provide: getRepositoryToken(StudentMark),
           useFactory: mockRepository,
+        },
+        {
+          provide: DataSource,
+          useValue: {},
         },
         {
           provide: AuthService,
@@ -914,20 +919,15 @@ describe('InstructorsService', () => {
         relations: {
           student: true,
         },
-      });
-      expect(result).toEqual([
-        {
-          id: lessonMarkDataMock.id,
-          mark: lessonMarkDataMock.mark,
-          created_at: lessonMarkDataMock.created_at,
-          updated_at: lessonMarkDataMock.updated_at,
+        select: {
           student: {
-            id: lessonMarkDataMock.student.id,
-            first_name: lessonMarkDataMock.student.first_name,
-            last_name: lessonMarkDataMock.student.last_name,
+            id: true,
+            first_name: true,
+            last_name: true,
           },
         },
-      ]);
+      });
+      expect(result).toEqual([lessonMarkDataMock]);
     });
 
     it('should return an empty array', async () => {
@@ -951,6 +951,13 @@ describe('InstructorsService', () => {
         },
         relations: {
           student: true,
+        },
+        select: {
+          student: {
+            id: true,
+            first_name: true,
+            last_name: true,
+          },
         },
       });
       expect(result).toEqual([]);

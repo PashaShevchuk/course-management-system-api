@@ -333,4 +333,22 @@ export class StudentsService {
 
     return markData;
   }
+
+  async getStudentCourseData(
+    studentId: string,
+    courseId: string,
+  ): Promise<StudentCourse> {
+    const result = await this.studentCourseRepository.findOne({
+      where: {
+        student: { id: studentId },
+        course: { id: courseId },
+      },
+    });
+
+    if (!result) {
+      throw new HttpException('Data not found', HttpStatus.NOT_FOUND);
+    }
+
+    return result;
+  }
 }

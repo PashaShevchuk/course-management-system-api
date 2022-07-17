@@ -10,8 +10,12 @@ import { AuthService } from '../auth/auth.service';
 import { CreateInstructorByAdminDto } from './dto/create-instructor-by-admin.dto';
 import { Instructor } from '../../db/entities/instructor/instructor.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { EmailTemplates, UserRoles } from '../../constants';
+import { Repository, DataSource } from 'typeorm';
+import {
+  EmailTemplates,
+  MIN_PERCENTAGE_OF_FINAL_MARK,
+  UserRoles,
+} from '../../constants';
 import { CreateInstructorDto } from './dto/create-instructor.dto';
 import { UpdateInstructorStatusDto } from './dto/update-instructor-status.dto';
 import { ConfigService } from '../../config/config.service';
@@ -29,6 +33,8 @@ import { PutMarkForStudentDto } from './dto/put-mark-for-student.dto';
 import { StudentMark } from '../../db/entities/student-mark/student-mark.entity';
 import { UpdateMarkDto } from './dto/update-mark.dto';
 import { lessonMarksExampleDto } from './dto/lesson-marks-example.dto';
+import { PutFinalMarkForStudentDto } from './dto/put-final-mark-for-student.dto';
+import { courseStudentsDataExampleDto } from './dto/course-students-data-example.dto';
 
 @Injectable()
 export class InstructorsService {
@@ -52,6 +58,7 @@ export class InstructorsService {
     private readonly authService: AuthService,
     private readonly configService: ConfigService,
     private readonly mailService: MailService,
+    private readonly dataSource: DataSource,
   ) {}
 
   async createInstructorByAdmin(
@@ -269,15 +276,7 @@ export class InstructorsService {
       relations: { student: true },
     });
 
-    const students = studentCourses.reduce((arr, item) => {
-      if (item.student.is_active) {
-        arr.push(item.student);
-      }
-
-      return arr;
-    }, []);
-
-    return students;
+    return studentCourses.map((item) => item.student);
   }
 
   async createCourseFeedback(
@@ -486,22 +485,279 @@ export class InstructorsService {
       relations: {
         student: true,
       },
+      select: {
+        student: {
+          id: true,
+          first_name: true,
+          last_name: true,
+        },
+      },
     });
 
-    const marks = marksData.length
-      ? marksData.map((item) => ({
-          id: item.id,
-          mark: item.mark,
-          created_at: item.created_at,
-          updated_at: item.updated_at,
-          student: {
-            id: item.student.id,
-            first_name: item.student.first_name,
-            last_name: item.student.last_name,
-          },
-        }))
-      : [];
+    return marksData;
+  }
 
-    return marks;
+  async putFinalMarksForStudents(instructorId: string, courseId: string) {
+    this.logger.log(`${this.LOGGER_PREFIX} put final marks for students`);
+
+    const instructorCourse = await this.instructorCourseRepository.findOne({
+      where: {
+        instructor: { id: instructorId },
+        course: { id: courseId },
+      },
+    });
+
+    if (!instructorCourse) {
+      throw new HttpException('Course not found', HttpStatus.NOT_FOUND);
+    }
+
+    const studentFinalMarks = await this.lessonRepository.query(
+      `
+          SELECT sm."studentId", ROUND(AVG(sm.mark)) as final_mark
+          FROM lesson
+                   INNER JOIN student_mark sm on lesson.id = sm."lessonId"
+          WHERE "courseId" = $1
+          GROUP BY sm."studentId";
+      `,
+      [courseId],
+    );
+
+    if (!studentFinalMarks.length) {
+      throw new HttpException(
+        'There are no grades for this course',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    const queryRunner = this.dataSource.createQueryRunner();
+
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const promises = studentFinalMarks.reduce((arr, item) => {
+        arr.push(
+          this.studentCourseRepository
+            .createQueryBuilder('studentMark', queryRunner)
+            .update()
+            .set({ final_mark: item.final_mark })
+            .where('studentId = :id', { id: item.studentId })
+            .andWhere('courseId = :courseId', { courseId })
+            .execute(),
+        );
+
+        return arr;
+      }, []);
+
+      await Promise.all(promises);
+
+      await queryRunner.commitTransaction();
+    } catch (err) {
+      await queryRunner.rollbackTransaction();
+
+      throw err;
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  async putFinalMarkForStudent(
+    instructorId: string,
+    putFinalMarkForStudentDto: PutFinalMarkForStudentDto,
+  ) {
+    this.logger.log(`${this.LOGGER_PREFIX} put final mark for student`);
+
+    const instructorCourse = await this.instructorCourseRepository.findOne({
+      where: {
+        instructor: { id: instructorId },
+        course: { id: putFinalMarkForStudentDto.course_id },
+      },
+    });
+
+    if (!instructorCourse) {
+      throw new HttpException('Course not found', HttpStatus.NOT_FOUND);
+    }
+
+    const [studentFinalMark] = await this.lessonRepository.query(
+      `
+          SELECT sm."studentId", ROUND(AVG(sm.mark)) as final_mark
+          FROM lesson
+                   INNER JOIN student_mark sm on lesson.id = sm."lessonId"
+          WHERE "courseId" = $1 AND "studentId" = $2
+          GROUP BY sm."studentId";
+      `,
+      [
+        putFinalMarkForStudentDto.course_id,
+        putFinalMarkForStudentDto.student_id,
+      ],
+    );
+
+    if (!studentFinalMark) {
+      throw new HttpException('Data not found', HttpStatus.NOT_FOUND);
+    }
+
+    await this.studentCourseRepository
+      .createQueryBuilder('studentMark')
+      .update()
+      .set({ final_mark: studentFinalMark.final_mark })
+      .where('studentId = :id', { id: studentFinalMark.studentId })
+      .andWhere('courseId = :courseId', {
+        courseId: putFinalMarkForStudentDto.course_id,
+      })
+      .execute();
+  }
+
+  async getStudentsData(
+    instructorId: string,
+    courseId: string,
+  ): Promise<typeof courseStudentsDataExampleDto[]> {
+    this.logger.log(`${this.LOGGER_PREFIX} get course students data`);
+
+    const instructorCourse = await this.instructorCourseRepository.findOne({
+      where: {
+        instructor: { id: instructorId },
+        course: { id: courseId },
+      },
+    });
+
+    if (!instructorCourse) {
+      throw new HttpException('Course not found', HttpStatus.NOT_FOUND);
+    }
+
+    const result = await this.studentCourseRepository.find({
+      where: {
+        course: { id: courseId },
+      },
+      relations: {
+        student: true,
+      },
+      select: {
+        student: {
+          id: true,
+          first_name: true,
+          last_name: true,
+          email: true,
+        },
+      },
+    });
+
+    return result;
+  }
+
+  async putPassCourseForStudents(instructorId: string, courseId: string) {
+    this.logger.log(`${this.LOGGER_PREFIX} put pass course for students`);
+
+    const instructorCourse = await this.instructorCourseRepository.findOne({
+      where: {
+        instructor: { id: instructorId },
+        course: { id: courseId },
+      },
+    });
+
+    if (!instructorCourse) {
+      throw new HttpException('Course not found', HttpStatus.NOT_FOUND);
+    }
+
+    const studentMarksData = await this.lessonRepository.query(
+      `
+          SELECT sm."studentId", SUM(l.highest_mark) as highest_mark_sum, SUM(sm.mark) as mark_sum
+          FROM lesson as l
+                   INNER JOIN student_mark sm on l.id = sm."lessonId"
+          WHERE "courseId" = $1
+          GROUP BY sm."studentId";
+      `,
+      [courseId],
+    );
+
+    if (!studentMarksData.length) {
+      throw new HttpException('Data not found', HttpStatus.NOT_FOUND);
+    }
+
+    const queryRunner = this.dataSource.createQueryRunner();
+
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      let isCoursePass;
+      const promises = studentMarksData.reduce((arr, item) => {
+        isCoursePass =
+          (Number(item.mark_sum) * 100) / Number(item.highest_mark_sum) >=
+          MIN_PERCENTAGE_OF_FINAL_MARK;
+
+        arr.push(
+          this.studentCourseRepository
+            .createQueryBuilder('studentMark', queryRunner)
+            .update()
+            .set({ is_course_pass: isCoursePass })
+            .where('studentId = :id', { id: item.studentId })
+            .andWhere('courseId = :courseId', { courseId })
+            .execute(),
+        );
+
+        return arr;
+      }, []);
+
+      await Promise.all(promises);
+
+      await queryRunner.commitTransaction();
+    } catch (err) {
+      await queryRunner.rollbackTransaction();
+
+      throw err;
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  async putPassCourseForStudent(
+    instructorId: string,
+    putPassCourseForStudentDto: PutFinalMarkForStudentDto,
+  ) {
+    this.logger.log(`${this.LOGGER_PREFIX} put pass course for a student`);
+
+    const instructorCourse = await this.instructorCourseRepository.findOne({
+      where: {
+        instructor: { id: instructorId },
+        course: { id: putPassCourseForStudentDto.course_id },
+      },
+    });
+
+    if (!instructorCourse) {
+      throw new HttpException('Course not found', HttpStatus.NOT_FOUND);
+    }
+
+    const [studentMarkData] = await this.lessonRepository.query(
+      `
+          SELECT sm."studentId", SUM(l.highest_mark) as highest_mark_sum, SUM(sm.mark) as mark_sum
+          FROM lesson as l
+                   INNER JOIN student_mark sm on l.id = sm."lessonId"
+          WHERE "courseId" = $1 AND "studentId" = $2
+          GROUP BY sm."studentId";
+      `,
+      [
+        putPassCourseForStudentDto.course_id,
+        putPassCourseForStudentDto.student_id,
+      ],
+    );
+
+    if (!studentMarkData) {
+      throw new HttpException('Data not found', HttpStatus.NOT_FOUND);
+    }
+
+    const isCoursePass =
+      (Number(studentMarkData.mark_sum) * 100) /
+        Number(studentMarkData.highest_mark_sum) >=
+      MIN_PERCENTAGE_OF_FINAL_MARK;
+
+    await this.studentCourseRepository
+      .createQueryBuilder('studentMark')
+      .update()
+      .set({ is_course_pass: isCoursePass })
+      .where('studentId = :id', { id: studentMarkData.studentId })
+      .andWhere('courseId = :courseId', {
+        courseId: putPassCourseForStudentDto.course_id,
+      })
+      .execute();
   }
 }

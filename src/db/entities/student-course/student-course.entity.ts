@@ -17,12 +17,22 @@ export class StudentCourse {
   id: string;
 
   @ApiProperty()
+  @Column('int', {
+    nullable: true,
+  })
+  final_mark: number;
+
+  @ApiProperty()
+  @Column({
+    nullable: true,
+  })
+  is_course_pass: boolean;
+
   @ManyToOne(() => Course, (course) => course.studentCourses, {
     onDelete: 'CASCADE',
   })
   course: Course;
 
-  @ApiProperty()
   @ManyToOne(() => Student, (student) => student.studentCourses, {
     onDelete: 'CASCADE',
   })

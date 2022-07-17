@@ -34,6 +34,8 @@ import { UpdateFeedbackDto } from './dto/update-feedback.dto';
 import { PutMarkForStudentDto } from './dto/put-mark-for-student.dto';
 import { UpdateMarkDto } from './dto/update-mark.dto';
 import { lessonMarksExampleDto } from './dto/lesson-marks-example.dto';
+import { PutFinalMarkForStudentDto } from './dto/put-final-mark-for-student.dto';
+import { courseStudentsDataExampleDto } from './dto/course-students-data-example.dto';
 
 @ApiTags('Instructor')
 @Controller('instructors')
@@ -204,6 +206,51 @@ export class InstructorsController {
   }
 
   @ApiOperation({
+    summary: 'Put final marks for all students (only for instructor)',
+  })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoles.INSTRUCTOR)
+  @Post('courses/:id/final-marks')
+  async putFinalMarksForStudents(@Req() req, @Param('id') courseId: string) {
+    this.logger.log(`${this.LOGGER_PREFIX} put final marks for students`);
+    return this.instructorsService.putFinalMarksForStudents(
+      req.user.id,
+      courseId,
+    );
+  }
+
+  @ApiOperation({
+    summary: 'Put pass course for students (only for instructor)',
+  })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoles.INSTRUCTOR)
+  @Post('courses/:id/pass')
+  async putPassCourseForStudents(@Req() req, @Param('id') courseId: string) {
+    this.logger.log(`${this.LOGGER_PREFIX} put pass course for students`);
+    return this.instructorsService.putPassCourseForStudents(
+      req.user.id,
+      courseId,
+    );
+  }
+
+  @ApiOperation({
+    summary: 'Put pass course for a student (only for instructor)',
+  })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoles.INSTRUCTOR)
+  @Post('course-pass')
+  async putPassCourseForStudent(
+    @Req() req,
+    @Body() putPassCourseForStudentDto: PutFinalMarkForStudentDto,
+  ) {
+    this.logger.log(`${this.LOGGER_PREFIX} put pass course for a student`);
+    return this.instructorsService.putPassCourseForStudent(
+      req.user.id,
+      putPassCourseForStudentDto,
+    );
+  }
+
+  @ApiOperation({
     summary: 'Get instructor course students (only for instructor)',
   })
   @ApiResponse({ type: [Student] })
@@ -222,9 +269,25 @@ export class InstructorsController {
   }
 
   @ApiOperation({
+    summary:
+      'Get course students data: final marks, is course pass (only for instructor)',
+  })
+  @ApiResponse({ schema: { example: [courseStudentsDataExampleDto] } })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoles.INSTRUCTOR)
+  @Get('courses/:id/students-data')
+  async getStudentsData(
+    @Req() req,
+    @Param('id') courseId: string,
+  ): Promise<typeof courseStudentsDataExampleDto[]> {
+    this.logger.log(`${this.LOGGER_PREFIX} get course students data`);
+    return this.instructorsService.getStudentsData(req.user.id, courseId);
+  }
+
+  @ApiOperation({
     summary: 'Get instructor course lessons (only for instructor)',
   })
-  @ApiResponse({ schema: { example: studentLessonsExampleDto } })
+  @ApiResponse({ schema: { example: [studentLessonsExampleDto] } })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoles.INSTRUCTOR)
   @Get('courses/:id/lessons')
@@ -242,7 +305,7 @@ export class InstructorsController {
   @ApiOperation({
     summary: 'Get course lesson marks (only for instructor)',
   })
-  @ApiResponse({ schema: { example: lessonMarksExampleDto } })
+  @ApiResponse({ schema: { example: [lessonMarksExampleDto] } })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoles.INSTRUCTOR)
   @Get('courses/:id/lessons/:lessonId/marks')
@@ -287,6 +350,23 @@ export class InstructorsController {
     return this.instructorsService.updateStudentMark(
       req.user.id,
       updateMarkDto,
+    );
+  }
+
+  @ApiOperation({
+    summary: 'Put a final mark for a student (only for instructor)',
+  })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoles.INSTRUCTOR)
+  @Post('final-mark')
+  async putFinalMarkForStudent(
+    @Req() req,
+    @Body() putFinalMarkForStudentDto: PutFinalMarkForStudentDto,
+  ) {
+    this.logger.log(`${this.LOGGER_PREFIX} put a final mark for a student`);
+    return this.instructorsService.putFinalMarkForStudent(
+      req.user.id,
+      putFinalMarkForStudentDto,
     );
   }
 
