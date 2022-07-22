@@ -12,6 +12,8 @@ import { Lesson } from '../../db/entities/lesson/lesson.entity';
 import { StudentCourse } from '../../db/entities/student-course/student-course.entity';
 import { CourseFeedback } from '../../db/entities/course-feedback/course-feedback.entity';
 import { StudentMark } from '../../db/entities/student-mark/student-mark.entity';
+import { Homework } from '../../db/entities/homework/homework.entity';
+import { StorageModule } from '../storage/storage.module';
 
 @Module({
   imports: [
@@ -22,11 +24,13 @@ import { StudentMark } from '../../db/entities/student-mark/student-mark.entity'
       StudentCourse,
       CourseFeedback,
       StudentMark,
+      Homework,
     ]),
     forwardRef(() => AuthModule),
     ConfigModule,
     RedisModule,
     MailModule,
+    StorageModule,
   ],
   controllers: [InstructorsController],
   providers: [InstructorsService],

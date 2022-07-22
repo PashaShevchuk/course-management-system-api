@@ -5,6 +5,7 @@ import { Exclude } from 'class-transformer';
 import { StudentCourse } from '../student-course/student-course.entity';
 import { CourseFeedback } from '../course-feedback/course-feedback.entity';
 import { StudentMark } from '../student-mark/student-mark.entity';
+import { Homework } from '../homework/homework.entity';
 
 @Entity()
 export class Student {
@@ -80,4 +81,7 @@ export class Student {
 
   @OneToMany(() => StudentMark, (studentMark) => studentMark.student)
   marks: StudentMark[];
+
+  @OneToMany(() => Homework, (homework) => homework.student)
+  homeworks: Homework[];
 }

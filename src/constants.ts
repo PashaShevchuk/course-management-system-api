@@ -9,3 +9,9 @@ export enum EmailTemplates {
 }
 
 export const MIN_PERCENTAGE_OF_FINAL_MARK = 80; // %
+
+export const MIME_TYPES = {
+  plain: 'text/plain',
+  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  doc: 'application/msword',
+};

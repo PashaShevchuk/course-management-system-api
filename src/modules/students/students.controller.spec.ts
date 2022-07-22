@@ -17,7 +17,10 @@ import { UpdateStudentStatusDto } from './dto/update-student-status.dto';
 import { UpdateStudentDto } from './dto/update-student.dto';
 import { Course } from '../../db/entities/course/course.entity';
 import { CourseFeedback } from '../../db/entities/course-feedback/course-feedback.entity';
-import { StudentMark } from '../../db/entities/student-mark/student-mark.entity';
+import { Homework } from '../../db/entities/homework/homework.entity';
+import { StorageService } from '../storage/storage.service';
+import { studentLessonDataExampleDto } from './dto/student-lesson-data-example.dto';
+import { DataSource } from 'typeorm';
 
 const mockRepository = () => ({
   find: jest.fn(),
@@ -55,8 +58,16 @@ describe('StudentsController', () => {
           useFactory: mockRepository,
         },
         {
-          provide: getRepositoryToken(StudentMark),
+          provide: getRepositoryToken(Homework),
           useFactory: mockRepository,
+        },
+        {
+          provide: StorageService,
+          useValue: {},
+        },
+        {
+          provide: DataSource,
+          useValue: {},
         },
         {
           provide: AuthService,
@@ -272,23 +283,23 @@ describe('StudentsController', () => {
     });
   });
 
-  describe('getLessonMark', () => {
-    it('should get student lesson mark', async () => {
+  describe('getLessonData', () => {
+    it('should get student lesson data', async () => {
       const reqMock = { user: { id: studentIdMock } };
-      const result = new StudentMark();
+      const result = { ...studentLessonDataExampleDto };
 
       jest
-        .spyOn(studentsService, 'getLessonMark')
+        .spyOn(studentsService, 'getLessonData')
         .mockImplementation(() => Promise.resolve(result));
 
       expect(
-        await studentsController.getLessonMark(
+        await studentsController.getLessonData(
           reqMock,
           courseIdMock,
           lessonIdMock,
         ),
       ).toBe(result);
-      expect(studentsService.getLessonMark).toHaveBeenCalledWith(
+      expect(studentsService.getLessonData).toHaveBeenCalledWith(
         reqMock.user.id,
         courseIdMock,
         lessonIdMock,

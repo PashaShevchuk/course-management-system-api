@@ -109,6 +109,15 @@ export class ConfigService {
       ttl: parseInt(this.getValue('CACHE_TTL'), 10),
     };
   }
+
+  public getStorageConfig(): { [key: string]: string } {
+    return {
+      projectId: this.getValue('PROJECT_ID'),
+      private_key: this.getValue('GCP_PRIVATE_KEY'),
+      client_email: this.getValue('CLIENT_EMAIL'),
+      bucket: this.getValue('HW_BUCKET'),
+    };
+  }
 }
 
 const configService = new ConfigService(process.env);

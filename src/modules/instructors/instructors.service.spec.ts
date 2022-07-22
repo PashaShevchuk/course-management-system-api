@@ -13,6 +13,8 @@ import { InstructorCourse } from '../../db/entities/instructor-course/instructor
 import { CourseFeedback } from '../../db/entities/course-feedback/course-feedback.entity';
 import { StudentMark } from '../../db/entities/student-mark/student-mark.entity';
 import { DataSource } from 'typeorm';
+import { Homework } from '../../db/entities/homework/homework.entity';
+import { StorageService } from '../storage/storage.service';
 
 const mockRepository = () => ({
   find: jest.fn(),
@@ -181,6 +183,14 @@ describe('InstructorsService', () => {
         {
           provide: getRepositoryToken(StudentMark),
           useFactory: mockRepository,
+        },
+        {
+          provide: getRepositoryToken(Homework),
+          useFactory: mockRepository,
+        },
+        {
+          provide: StorageService,
+          useValue: {},
         },
         {
           provide: DataSource,

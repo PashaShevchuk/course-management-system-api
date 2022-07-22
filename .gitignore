@@ -22,3 +22,4 @@ lerna-debug.log*
 /.idea
 .env
 .ormconfig.json
+service-account-buckets.json

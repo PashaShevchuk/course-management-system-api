@@ -5,9 +5,11 @@ import {
   Inject,
   Injectable,
   Logger,
+  UploadedFile,
 } from '@nestjs/common';
+import { v4 } from 'uuid';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { AuthService } from '../auth/auth.service';
 import { ConfigService } from '../../config/config.service';
 import { MailService } from '../mail/mail.service';
@@ -21,7 +23,10 @@ import { StudentCourse } from '../../db/entities/student-course/student-course.e
 import { Course } from '../../db/entities/course/course.entity';
 import { Lesson } from '../../db/entities/lesson/lesson.entity';
 import { CourseFeedback } from '../../db/entities/course-feedback/course-feedback.entity';
-import { StudentMark } from '../../db/entities/student-mark/student-mark.entity';
+import { StorageService } from '../storage/storage.service';
+import { StorageFile } from '../storage/storage-file';
+import { Homework } from '../../db/entities/homework/homework.entity';
+import { studentLessonDataExampleDto } from './dto/student-lesson-data-example.dto';
 
 @Injectable()
 export class StudentsService {
@@ -37,12 +42,14 @@ export class StudentsService {
     private readonly lessonRepository: Repository<Lesson>,
     @InjectRepository(CourseFeedback)
     private readonly courseFeedbackRepository: Repository<CourseFeedback>,
-    @InjectRepository(StudentMark)
-    private readonly studentMarkRepository: Repository<StudentMark>,
+    @InjectRepository(Homework)
+    private readonly homeworkRepository: Repository<Homework>,
     @Inject(forwardRef(() => AuthService))
     private readonly authService: AuthService,
     private readonly configService: ConfigService,
     private readonly mailService: MailService,
+    private readonly storageService: StorageService,
+    private readonly dataSource: DataSource,
   ) {}
 
   async createStudentByAdmin(
@@ -314,24 +321,34 @@ export class StudentsService {
     return courseFeedback;
   }
 
-  async getLessonMark(
+  async getLessonData(
     studentId: string,
     courseId: string,
     lessonId: string,
-  ): Promise<StudentMark> {
-    this.logger.log(`${this.LOGGER_PREFIX} get student lesson mark`);
+  ): Promise<typeof studentLessonDataExampleDto> {
+    this.logger.log(`${this.LOGGER_PREFIX} get student lesson data`);
 
-    const markData = await this.studentMarkRepository.findOne({
+    const lessonData = await this.lessonRepository.findOne({
       where: {
-        student: { id: studentId },
-        lesson: {
-          id: lessonId,
-          course: { id: courseId },
+        id: lessonId,
+        course: { id: courseId },
+        marks: { student: { id: studentId } },
+        homeworks: { student: { id: studentId } },
+      },
+      relations: {
+        marks: true,
+        homeworks: true,
+      },
+      select: {
+        homeworks: {
+          id: true,
+          created_at: true,
+          updated_at: true,
         },
       },
     });
 
-    return markData;
+    return lessonData;
   }
 
   async getStudentCourseData(
@@ -350,5 +367,82 @@ export class StudentsService {
     }
 
     return result;
+  }
+
+  async uploadHomeworkFile(
+    studentId: string,
+    courseId: string,
+    lessonId: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    this.logger.log(`${this.LOGGER_PREFIX} upload a homework file`);
+
+    const studentCourse = await this.studentCourseRepository.findOne({
+      where: {
+        student: { id: studentId },
+        course: {
+          id: courseId,
+          lessons: { id: lessonId },
+        },
+      },
+    });
+
+    if (!studentCourse) {
+      throw new HttpException('Data not found', HttpStatus.NOT_FOUND);
+    }
+
+    const queryRunner = this.dataSource.createQueryRunner();
+
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const fileId = v4();
+      const filePath = `${studentId}/${fileId}`;
+      const homeworkData = new Homework();
+      homeworkData.file_path = filePath;
+      homeworkData.student = <any>{ id: studentId };
+      homeworkData.lesson = <any>{ id: lessonId };
+
+      await queryRunner.manager.save(Homework, homeworkData);
+      await this.storageService.save(filePath, file.mimetype, file.buffer, [
+        { fileId },
+      ]);
+
+      await queryRunner.commitTransaction();
+    } catch (err) {
+      await queryRunner.rollbackTransaction();
+
+      if (err.code === '23505') {
+        throw new HttpException(
+          'You have already uploaded the homework for this lesson',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      throw err;
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  async getHomeworkFile(
+    studentId: string,
+    homeworkId: string,
+  ): Promise<StorageFile> {
+    this.logger.log(`${this.LOGGER_PREFIX} get a homework file`);
+
+    const homework = await this.homeworkRepository.findOne({
+      where: {
+        id: homeworkId,
+        student: { id: studentId },
+      },
+    });
+
+    if (!homework) {
+      throw new HttpException('Data not found', HttpStatus.NOT_FOUND);
+    }
+
+    return await this.storageService.get(homework.file_path);
   }
 }

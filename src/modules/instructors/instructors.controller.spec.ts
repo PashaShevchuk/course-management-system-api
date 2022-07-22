@@ -24,6 +24,8 @@ import { StudentMark } from '../../db/entities/student-mark/student-mark.entity'
 import { PutMarkForStudentDto } from './dto/put-mark-for-student.dto';
 import { UpdateMarkDto } from './dto/update-mark.dto';
 import { DataSource } from 'typeorm';
+import { Homework } from '../../db/entities/homework/homework.entity';
+import { StorageService } from '../storage/storage.service';
 
 const mockRepository = () => ({
   find: jest.fn(),
@@ -67,6 +69,14 @@ describe('InstructorsController', () => {
         {
           provide: getRepositoryToken(StudentMark),
           useFactory: mockRepository,
+        },
+        {
+          provide: getRepositoryToken(Homework),
+          useFactory: mockRepository,
+        },
+        {
+          provide: StorageService,
+          useValue: {},
         },
         {
           provide: DataSource,

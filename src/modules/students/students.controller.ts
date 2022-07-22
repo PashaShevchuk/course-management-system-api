@@ -9,6 +9,8 @@ import {
   Post,
   Put,
   Req,
+  Res,
+  UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -29,8 +31,11 @@ import { Course } from '../../db/entities/course/course.entity';
 import { Lesson } from '../../db/entities/lesson/lesson.entity';
 import { studentLessonsExampleDto } from './dto/student-lessons-example.dto';
 import { CourseFeedback } from '../../db/entities/course-feedback/course-feedback.entity';
-import { StudentMark } from '../../db/entities/student-mark/student-mark.entity';
 import { StudentCourse } from '../../db/entities/student-course/student-course.entity';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { UploadHomeworkFileDto } from './dto/upload-homework-file.dto';
+import { multerOptions } from '../../config/multer.config';
+import { studentLessonDataExampleDto } from './dto/student-lesson-data-example.dto';
 
 @ApiTags('Student')
 @Controller('students')
@@ -73,6 +78,46 @@ export class StudentsController {
       req.user.id,
       takeCourseDto.course_id,
     );
+  }
+
+  @ApiOperation({ summary: 'Upload a homework file (only for student)' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoles.STUDENT)
+  @Post('homework/upload')
+  @UseInterceptors(FileInterceptor('file', multerOptions))
+  async uploadHomeworkFile(
+    @Req() req,
+    @Body() fileDto: UploadHomeworkFileDto,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    this.logger.log(`${this.LOGGER_PREFIX} upload a homework file`);
+    return this.studentsService.uploadHomeworkFile(
+      req.user.id,
+      fileDto.course_id,
+      fileDto.lesson_id,
+      file,
+    );
+  }
+
+  @ApiOperation({ summary: 'Get a homework file (only for student)' })
+  @ApiResponse({ schema: { example: 'file-buffer' } })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoles.STUDENT)
+  @Get('homework/:id')
+  async getHomeworkFile(
+    @Param('id') homeworkId: string,
+    @Req() req,
+    @Res() res,
+  ) {
+    this.logger.log(`${this.LOGGER_PREFIX} get a homework file`);
+
+    const file = await this.studentsService.getHomeworkFile(
+      req.user.id,
+      homeworkId,
+    );
+
+    res.setHeader('Content-Type', file.contentType);
+    res.end(file.buffer);
   }
 
   @ApiOperation({ summary: 'Get students by status (only for admin)' })
@@ -155,18 +200,20 @@ export class StudentsController {
     return this.studentsService.getStudentCourseLessons(req.user.id, courseId);
   }
 
-  @ApiOperation({ summary: 'Get student lesson mark (only for student)' })
-  @ApiResponse({ type: StudentMark })
+  @ApiOperation({
+    summary: 'Get student lesson data: mark, homework (only for student)',
+  })
+  @ApiResponse({ schema: { example: studentLessonDataExampleDto } })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoles.STUDENT)
-  @Get('courses/:id/lessons/:lessonId/mark')
-  async getLessonMark(
+  @Get('courses/:id/lessons/:lessonId/data')
+  async getLessonData(
     @Req() req,
     @Param('id') courseId: string,
     @Param('lessonId') lessonId: string,
-  ): Promise<StudentMark> {
-    this.logger.log(`${this.LOGGER_PREFIX} get student lesson mark`);
-    return this.studentsService.getLessonMark(req.user.id, courseId, lessonId);
+  ): Promise<typeof studentLessonDataExampleDto> {
+    this.logger.log(`${this.LOGGER_PREFIX} get student lesson data`);
+    return this.studentsService.getLessonData(req.user.id, courseId, lessonId);
   }
 
   @ApiOperation({ summary: 'Get student course feedback (only for student)' })

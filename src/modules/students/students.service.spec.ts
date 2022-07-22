@@ -10,7 +10,9 @@ import { Lesson } from '../../db/entities/lesson/lesson.entity';
 import { EmailTemplates, UserRoles } from '../../constants';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { CourseFeedback } from '../../db/entities/course-feedback/course-feedback.entity';
-import { StudentMark } from '../../db/entities/student-mark/student-mark.entity';
+import { Homework } from '../../db/entities/homework/homework.entity';
+import { StorageService } from '../storage/storage.service';
+import { DataSource } from 'typeorm';
 
 const mockRepository = () => ({
   find: jest.fn(),
@@ -33,7 +35,6 @@ const mockedMailService = {
 const studentIdMock = 'student-id';
 const courseIdMock = 'course-id';
 const lessonIdMock = 'lesson-id';
-const markIdMock = 'mark-id';
 const hashMock = 'hash';
 const createStudentDataMock = {
   first_name: 'New Admin',
@@ -97,13 +98,28 @@ const courseFeedbackDataDBMock = {
   created_at: '2022-06-17T15:29:38.996Z',
   updated_at: '2022-06-17T15:29:38.996Z',
 };
-const studentMarkDataMock = {
-  id: markIdMock,
-  mark: 100,
-  student_id: studentIdMock,
-  lesson_id: lessonIdMock,
-  created_at: '2022-06-17T15:29:38.996Z',
-  updated_at: '2022-06-17T15:29:38.996Z',
+const studentLessonDataMock = {
+  id: lessonIdMock,
+  title: 'Data types',
+  description: 'Some lesson description',
+  highest_mark: 100,
+  created_at: '2022-07-16T10:46:47.567Z',
+  updated_at: '2022-07-16T10:46:47.567Z',
+  marks: [
+    {
+      id: 'bce91c8d-0a2d-44e2-9725-2a354355873b',
+      mark: 90,
+      created_at: '2022-07-16T11:02:34.981Z',
+      updated_at: '2022-07-16T11:02:34.981Z',
+    },
+  ],
+  homeworks: [
+    {
+      id: 'd5730b8c-cb47-4b59-b9b4-bd3b927f9a93',
+      created_at: '2022-07-22T13:34:20.461Z',
+      updated_at: '2022-07-22T13:34:20.461Z',
+    },
+  ],
 };
 
 describe('StudentsService', () => {
@@ -112,7 +128,6 @@ describe('StudentsService', () => {
   let studentCourseRepository;
   let lessonRepository;
   let courseFeedbackRepository;
-  let studentMarkRepository;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -135,7 +150,7 @@ describe('StudentsService', () => {
           useFactory: mockRepository,
         },
         {
-          provide: getRepositoryToken(StudentMark),
+          provide: getRepositoryToken(Homework),
           useFactory: mockRepository,
         },
         {
@@ -150,6 +165,14 @@ describe('StudentsService', () => {
           provide: MailService,
           useValue: mockedMailService,
         },
+        {
+          provide: StorageService,
+          useValue: {},
+        },
+        {
+          provide: DataSource,
+          useValue: {},
+        },
       ],
     }).compile();
 
@@ -158,7 +181,6 @@ describe('StudentsService', () => {
     studentCourseRepository = module.get(getRepositoryToken(StudentCourse));
     lessonRepository = module.get(getRepositoryToken(Lesson));
     courseFeedbackRepository = module.get(getRepositoryToken(CourseFeedback));
-    studentMarkRepository = module.get(getRepositoryToken(StudentMark));
   });
 
   afterEach(() => jest.clearAllMocks());
@@ -533,26 +555,36 @@ describe('StudentsService', () => {
     });
   });
 
-  describe('getLessonMark', () => {
-    it('should get student lesson mark', async () => {
-      studentMarkRepository.findOne.mockResolvedValue(studentMarkDataMock);
+  describe('getLessonData', () => {
+    it('should get student lesson data', async () => {
+      lessonRepository.findOne.mockResolvedValue(studentLessonDataMock);
 
-      const result = await studentsService.getLessonMark(
+      const result = await studentsService.getLessonData(
         studentIdMock,
-        courseIdMock,
+        lessonIdMock,
         lessonIdMock,
       );
 
-      expect(studentMarkRepository.findOne).toHaveBeenCalledWith({
+      expect(lessonRepository.findOne).toHaveBeenCalledWith({
         where: {
-          student: { id: studentIdMock },
-          lesson: {
-            id: lessonIdMock,
-            course: { id: courseIdMock },
+          id: lessonIdMock,
+          course: { id: lessonIdMock },
+          marks: { student: { id: studentIdMock } },
+          homeworks: { student: { id: studentIdMock } },
+        },
+        relations: {
+          marks: true,
+          homeworks: true,
+        },
+        select: {
+          homeworks: {
+            id: true,
+            created_at: true,
+            updated_at: true,
           },
         },
       });
-      expect(result).toEqual(studentMarkDataMock);
+      expect(result).toEqual(studentLessonDataMock);
     });
   });
 });

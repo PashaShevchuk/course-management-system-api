@@ -9,6 +9,7 @@ import {
   Post,
   Put,
   Req,
+  Res,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -36,6 +37,8 @@ import { UpdateMarkDto } from './dto/update-mark.dto';
 import { lessonMarksExampleDto } from './dto/lesson-marks-example.dto';
 import { PutFinalMarkForStudentDto } from './dto/put-final-mark-for-student.dto';
 import { courseStudentsDataExampleDto } from './dto/course-students-data-example.dto';
+import { lessonHomeworkExampleDto } from './dto/lesson-homework-example.dto';
+import { GetHomeworkFileDto } from './dto/get-homework-file.dto';
 
 @ApiTags('Instructor')
 @Controller('instructors')
@@ -320,6 +323,49 @@ export class InstructorsController {
       courseId,
       lessonId,
     );
+  }
+
+  @ApiOperation({
+    summary: 'Get course lesson homeworks (only for instructor)',
+  })
+  @ApiResponse({ schema: { example: [lessonHomeworkExampleDto] } })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoles.INSTRUCTOR)
+  @Get('courses/:id/lessons/:lessonId/homeworks')
+  async getLessonHomeworks(
+    @Req() req,
+    @Param('id') courseId: string,
+    @Param('lessonId') lessonId: string,
+  ): Promise<typeof lessonHomeworkExampleDto[]> {
+    this.logger.log(`${this.LOGGER_PREFIX} get course lesson homeworks`);
+    return this.instructorsService.getLessonHomeworks(
+      req.user.id,
+      courseId,
+      lessonId,
+    );
+  }
+
+  @ApiOperation({
+    summary: 'Get course lesson homework file (only for instructor)',
+  })
+  @ApiResponse({ schema: { example: 'file-buffer' } })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoles.INSTRUCTOR)
+  @Post('homeworks')
+  async getLessonHomeworkFile(
+    @Req() req,
+    @Res() res,
+    @Body() getHomeworkFileDto: GetHomeworkFileDto,
+  ) {
+    this.logger.log(`${this.LOGGER_PREFIX} get course lesson homework file`);
+
+    const file = await this.instructorsService.getLessonHomeworkFile(
+      req.user.id,
+      getHomeworkFileDto,
+    );
+
+    res.setHeader('Content-Type', file.contentType);
+    res.end(file.buffer);
   }
 
   @ApiOperation({

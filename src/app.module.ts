@@ -12,6 +12,7 @@ import { MailerModule } from '@nestjs-modules/mailer';
 import { StudentsModule } from './modules/students/students.module';
 import { CoursesModule } from './modules/courses/courses.module';
 import { LessonsModule } from './modules/lessons/lessons.module';
+import { StorageModule } from './modules/storage/storage.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { LessonsModule } from './modules/lessons/lessons.module';
     StudentsModule,
     CoursesModule,
     LessonsModule,
+    StorageModule,
   ],
   controllers: [AppController],
   providers: [],

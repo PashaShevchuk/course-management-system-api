@@ -35,6 +35,11 @@ import { UpdateMarkDto } from './dto/update-mark.dto';
 import { lessonMarksExampleDto } from './dto/lesson-marks-example.dto';
 import { PutFinalMarkForStudentDto } from './dto/put-final-mark-for-student.dto';
 import { courseStudentsDataExampleDto } from './dto/course-students-data-example.dto';
+import { Homework } from '../../db/entities/homework/homework.entity';
+import { lessonHomeworkExampleDto } from './dto/lesson-homework-example.dto';
+import { StorageFile } from '../storage/storage-file';
+import { StorageService } from '../storage/storage.service';
+import { GetHomeworkFileDto } from './dto/get-homework-file.dto';
 
 @Injectable()
 export class InstructorsService {
@@ -54,11 +59,14 @@ export class InstructorsService {
     private readonly courseFeedbackRepository: Repository<CourseFeedback>,
     @InjectRepository(StudentMark)
     private readonly studentMarkRepository: Repository<StudentMark>,
+    @InjectRepository(Homework)
+    private readonly homeworkRepository: Repository<Homework>,
     @Inject(forwardRef(() => AuthService))
     private readonly authService: AuthService,
     private readonly configService: ConfigService,
     private readonly mailService: MailService,
     private readonly dataSource: DataSource,
+    private readonly storageService: StorageService,
   ) {}
 
   async createInstructorByAdmin(
@@ -497,6 +505,41 @@ export class InstructorsService {
     return marksData;
   }
 
+  async getLessonHomeworks(
+    instructorId: string,
+    courseId: string,
+    lessonId: string,
+  ): Promise<typeof lessonHomeworkExampleDto[]> {
+    this.logger.log(`${this.LOGGER_PREFIX} get course lesson homeworks`);
+
+    const homeworksData = await this.homeworkRepository.find({
+      where: {
+        lesson: {
+          id: lessonId,
+          course: {
+            id: courseId,
+            instructorCourses: { instructor: { id: instructorId } },
+          },
+        },
+      },
+      relations: {
+        student: true,
+      },
+      select: {
+        id: true,
+        created_at: true,
+        updated_at: true,
+        student: {
+          id: true,
+          first_name: true,
+          last_name: true,
+        },
+      },
+    });
+
+    return homeworksData;
+  }
+
   async putFinalMarksForStudents(instructorId: string, courseId: string) {
     this.logger.log(`${this.LOGGER_PREFIX} put final marks for students`);
 
@@ -759,5 +802,37 @@ export class InstructorsService {
         courseId: putPassCourseForStudentDto.course_id,
       })
       .execute();
+  }
+
+  async getLessonHomeworkFile(
+    instructorId: string,
+    getHomeworkFileDto: GetHomeworkFileDto,
+  ): Promise<StorageFile> {
+    this.logger.log(`${this.LOGGER_PREFIX} get course lesson homework file`);
+
+    const instructorCourse = await this.instructorCourseRepository.findOne({
+      where: {
+        instructor: { id: instructorId },
+        course: { id: getHomeworkFileDto.course_id },
+      },
+    });
+
+    if (!instructorCourse) {
+      throw new HttpException('Data not found', HttpStatus.NOT_FOUND);
+    }
+
+    const homework = await this.homeworkRepository.findOne({
+      where: {
+        id: getHomeworkFileDto.homework_id,
+        student: { id: getHomeworkFileDto.student_id },
+        lesson: { id: getHomeworkFileDto.lesson_id },
+      },
+    });
+
+    if (!homework) {
+      throw new HttpException('Data not found', HttpStatus.NOT_FOUND);
+    }
+
+    return await this.storageService.get(homework.file_path);
   }
 }
