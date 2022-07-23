@@ -9,6 +9,7 @@ import {
   Post,
   Put,
   Req,
+  Res,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -24,6 +25,8 @@ import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CreateAdminDto } from './dto/create-admin.dto';
 import { UpdateAdminDto } from './dto/update-admin.dto';
 import { GetAdminsByStatusDto } from './dto/get-admins--by-status.dto';
+import { Homework } from '../../db/entities/homework/homework.entity';
+import { homeworkExampleDto } from './dto/homework-example.dto';
 
 @ApiTags('Admin')
 @Controller('admins')
@@ -64,6 +67,43 @@ export class AdminsController {
     return this.adminsService.getAdminsByParams({
       is_active: getAdminsByStatusDto.is_active,
     });
+  }
+
+  @ApiOperation({ summary: 'Get homeworks list (only for admin)' })
+  @ApiResponse({ schema: { example: [homeworkExampleDto] } })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoles.ADMIN)
+  @Get('homeworks')
+  async getHomeworks(): Promise<Homework[]> {
+    this.logger.log(`${this.LOGGER_PREFIX} get homeworks list`);
+    return this.adminsService.getHomeworks();
+  }
+
+  @ApiOperation({ summary: 'Get homework file (only for admin)' })
+  @ApiResponse({ schema: { example: 'file-stream' } })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoles.ADMIN)
+  @Get('homeworks/:id')
+  async getHomeworkFile(
+    @Req() req,
+    @Res() res,
+    @Param('id') homeworkId: string,
+  ) {
+    this.logger.log(`${this.LOGGER_PREFIX} get homework file`);
+
+    const file = await this.adminsService.getHomeworkFile(homeworkId);
+
+    res.setHeader('Content-Type', file.contentType);
+    file.stream.pipe(res);
+  }
+
+  @ApiOperation({ summary: 'Delete homework file (only for admin)' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoles.ADMIN)
+  @Delete('homeworks/:id')
+  async deleteHomeworkFile(@Param('id') homeworkId: string) {
+    this.logger.log(`${this.LOGGER_PREFIX} delete homework file`);
+    return this.adminsService.deleteHomeworkFile(homeworkId);
   }
 
   @ApiOperation({

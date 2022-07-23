@@ -1,5 +1,7 @@
-export class StorageFile {
-  buffer: Buffer;
-  metadata: Map<string, string>;
+import { Stream } from 'stream';
+
+export interface StorageFile {
   contentType: string;
+  stream: Stream;
+  metadata?: { [key: string]: any };
 }

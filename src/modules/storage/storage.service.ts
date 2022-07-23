@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { DownloadResponse, Storage } from '@google-cloud/storage';
+import { Storage } from '@google-cloud/storage';
 import { ConfigService } from '../../config/config.service';
 import { StorageFile } from './storage-file';
 
@@ -54,48 +54,22 @@ export class StorageService {
       .delete({ ignoreNotFound: true });
   }
 
-  async get(path: string): Promise<StorageFile> {
+  async get(path: string, includeMetadata = false): Promise<StorageFile> {
     this.logger.log(`${this.LOGGER_PREFIX} get a file`);
 
-    const fileResponse: DownloadResponse = await this.storage
+    const fileStream = await this.storage
       .bucket(this.bucket)
       .file(path)
-      .download();
+      .createReadStream();
     const [metadata] = await this.storage
       .bucket(this.bucket)
       .file(path)
       .getMetadata();
 
-    const [buffer] = fileResponse;
-    const storageFile = new StorageFile();
-
-    storageFile.buffer = buffer;
-    storageFile.contentType = metadata.contentType;
-
-    return storageFile;
-  }
-
-  async getWithMetaData(path: string): Promise<StorageFile> {
-    this.logger.log(`${this.LOGGER_PREFIX} get a file with metadata`);
-
-    const [metadata] = await this.storage
-      .bucket(this.bucket)
-      .file(path)
-      .getMetadata();
-    const fileResponse: DownloadResponse = await this.storage
-      .bucket(this.bucket)
-      .file(path)
-      .download();
-
-    const [buffer] = fileResponse;
-    const storageFile = new StorageFile();
-
-    storageFile.buffer = buffer;
-    storageFile.metadata = new Map<string, string>(
-      Object.entries(metadata || {}),
-    );
-    storageFile.contentType = storageFile.metadata.get('contentType');
-
-    return storageFile;
+    return {
+      contentType: metadata.contentType,
+      stream: fileStream,
+      ...(includeMetadata && { metadata }),
+    };
   }
 }

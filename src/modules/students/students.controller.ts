@@ -100,7 +100,7 @@ export class StudentsController {
   }
 
   @ApiOperation({ summary: 'Get a homework file (only for student)' })
-  @ApiResponse({ schema: { example: 'file-buffer' } })
+  @ApiResponse({ schema: { example: 'file-stream' } })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoles.STUDENT)
   @Get('homework/:id')
@@ -117,7 +117,7 @@ export class StudentsController {
     );
 
     res.setHeader('Content-Type', file.contentType);
-    res.end(file.buffer);
+    file.stream.pipe(res);
   }
 
   @ApiOperation({ summary: 'Get students by status (only for admin)' })

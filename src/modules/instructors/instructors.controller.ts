@@ -348,7 +348,7 @@ export class InstructorsController {
   @ApiOperation({
     summary: 'Get course lesson homework file (only for instructor)',
   })
-  @ApiResponse({ schema: { example: 'file-buffer' } })
+  @ApiResponse({ schema: { example: 'file-stream' } })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoles.INSTRUCTOR)
   @Post('homeworks')
@@ -365,7 +365,7 @@ export class InstructorsController {
     );
 
     res.setHeader('Content-Type', file.contentType);
-    res.end(file.buffer);
+    file.stream.pipe(res);
   }
 
   @ApiOperation({

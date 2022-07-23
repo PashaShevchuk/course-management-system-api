@@ -833,6 +833,6 @@ export class InstructorsService {
       throw new HttpException('Data not found', HttpStatus.NOT_FOUND);
     }
 
-    return await this.storageService.get(homework.file_path);
+    return this.storageService.get(homework.file_path);
   }
 }

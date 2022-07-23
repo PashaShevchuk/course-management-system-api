@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Admin } from '../../db/entities/admin/admin.entity';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { CreateAdminByAdminDto } from './dto/create-admin-by-admin.dto';
 import { EmailTemplates, UserRoles } from '../../constants';
 import { AuthService } from '../auth/auth.service';
@@ -17,6 +17,9 @@ import { CreateAdminDto } from './dto/create-admin.dto';
 import { UpdateAdminDto } from './dto/update-admin.dto';
 import { MailService } from '../mail/mail.service';
 import { ConfigService } from '../../config/config.service';
+import { Homework } from '../../db/entities/homework/homework.entity';
+import { StorageFile } from '../storage/storage-file';
+import { StorageService } from '../storage/storage.service';
 
 @Injectable()
 export class AdminsService {
@@ -26,10 +29,14 @@ export class AdminsService {
   constructor(
     @InjectRepository(Admin)
     private readonly adminRepository: Repository<Admin>,
+    @InjectRepository(Homework)
+    private readonly homeworkRepository: Repository<Homework>,
     @Inject(forwardRef(() => AuthService))
     private readonly authService: AuthService,
     private readonly mailService: MailService,
     private readonly configService: ConfigService,
+    private readonly storageService: StorageService,
+    private readonly dataSource: DataSource,
   ) {}
 
   async createAdmin(createAdminDto: CreateAdminDto): Promise<string> {
@@ -183,6 +190,78 @@ export class AdminsService {
 
     if (!result.affected) {
       throw new HttpException('Data not found', HttpStatus.NOT_FOUND);
+    }
+  }
+
+  async getHomeworks(): Promise<Homework[]> {
+    this.logger.log(`${this.LOGGER_PREFIX} get homeworks list`);
+
+    const homeworks = await this.homeworkRepository.find({
+      relations: {
+        student: true,
+        lesson: true,
+      },
+      select: {
+        id: true,
+        created_at: true,
+        updated_at: true,
+        student: {
+          id: true,
+          first_name: true,
+          last_name: true,
+          email: true,
+        },
+        lesson: {
+          id: true,
+          title: true,
+        },
+      },
+    });
+
+    return homeworks;
+  }
+
+  async getHomeworkFile(homeworkId: string): Promise<StorageFile> {
+    this.logger.log(`${this.LOGGER_PREFIX} get homework file`);
+
+    const homework = await this.homeworkRepository.findOne({
+      where: { id: homeworkId },
+    });
+
+    if (!homework) {
+      throw new HttpException('Data not found', HttpStatus.NOT_FOUND);
+    }
+
+    return this.storageService.get(homework.file_path);
+  }
+
+  async deleteHomeworkFile(homeworkId: string) {
+    this.logger.log(`${this.LOGGER_PREFIX} delete homework file`);
+
+    const homework = await this.homeworkRepository.findOne({
+      where: { id: homeworkId },
+    });
+
+    if (!homework) {
+      throw new HttpException('Data not found', HttpStatus.NOT_FOUND);
+    }
+
+    const queryRunner = this.dataSource.createQueryRunner();
+
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      await queryRunner.manager.delete(Homework, { id: homeworkId });
+      await this.storageService.delete(homework.file_path);
+
+      await queryRunner.commitTransaction();
+    } catch (err) {
+      await queryRunner.rollbackTransaction();
+
+      throw err;
+    } finally {
+      await queryRunner.release();
     }
   }
 }

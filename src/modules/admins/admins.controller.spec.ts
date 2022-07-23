@@ -12,6 +12,9 @@ import { CreateAdminByAdminDto } from './dto/create-admin-by-admin.dto';
 import { GetAdminsByStatusDto } from './dto/get-admins--by-status.dto';
 import { UpdateAdminStatusDto } from './dto/update-admin-status.dto';
 import { UpdateAdminDto } from './dto/update-admin.dto';
+import { Homework } from '../../db/entities/homework/homework.entity';
+import { StorageService } from '../storage/storage.service';
+import { DataSource } from 'typeorm';
 
 const mockRepository = () => ({
   find: jest.fn(),
@@ -33,6 +36,18 @@ describe('AdminsController', () => {
         {
           provide: getRepositoryToken(Admin),
           useFactory: mockRepository,
+        },
+        {
+          provide: getRepositoryToken(Homework),
+          useFactory: mockRepository,
+        },
+        {
+          provide: StorageService,
+          useValue: {},
+        },
+        {
+          provide: DataSource,
+          useValue: {},
         },
         {
           provide: AuthService,

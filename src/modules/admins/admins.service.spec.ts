@@ -7,6 +7,9 @@ import { AuthService } from '../auth/auth.service';
 import { MailService } from '../mail/mail.service';
 import { ConfigService } from '../../config/config.service';
 import { EmailTemplates } from '../../constants';
+import { Homework } from '../../db/entities/homework/homework.entity';
+import { StorageService } from '../storage/storage.service';
+import { DataSource } from 'typeorm';
 
 const mockRepository = () => ({
   find: jest.fn(),
@@ -67,6 +70,18 @@ describe('AdminsService', () => {
         {
           provide: getRepositoryToken(Admin),
           useFactory: mockRepository,
+        },
+        {
+          provide: getRepositoryToken(Homework),
+          useFactory: mockRepository,
+        },
+        {
+          provide: StorageService,
+          useValue: {},
+        },
+        {
+          provide: DataSource,
+          useValue: {},
         },
         {
           provide: AuthService,
