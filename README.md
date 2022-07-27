@@ -59,7 +59,7 @@ $ npm run migration:generate --name=bar
 # unit tests
 $ npm run test
 
-# e2e tests
+# e2e tests (before running, check if a test DB exists)
 $ npm run test:e2e
 
 # test coverage

@@ -21,3 +21,13 @@ services:
       - "6380:6379"
     volumes:
       - ${REDIS_VOLUME}:/var/lib/redis
+
+  test_db:
+    build:
+      context: .local/postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DATABASE_E2E}
+    ports:
+      - "5437:5432"

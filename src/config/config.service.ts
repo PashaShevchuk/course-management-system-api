@@ -43,7 +43,16 @@ export class ConfigService {
 
   public getE2ETypeOrmConfig(): TypeOrmModuleOptions {
     return {
-      ...this.getBaseTypeOrmConfig(),
+      type: 'postgres',
+      host: this.getValue('POSTGRES_HOST'),
+      port: parseInt(this.getValue('POSTGRES_PORT_E2E'), 10),
+      username: this.getValue('POSTGRES_USER'),
+      password: this.getValue('POSTGRES_PASSWORD'),
+      database: this.getValue('POSTGRES_DATABASE_E2E'),
+      migrationsTableName: 'migration',
+      migrations: ['dist/db/migration/*.js'],
+      logging: this.isProduction() ? ['error'] : ['query', 'error'],
+      synchronize: true,
       entities: ['**/*.entity{.ts,.js}'],
     };
   }
