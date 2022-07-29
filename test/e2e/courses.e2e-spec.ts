@@ -1,24 +1,21 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import {
   ExecutionContext,
   INestApplication,
   ValidationPipe,
 } from '@nestjs/common';
-import * as request from 'supertest';
 import { Repository } from 'typeorm';
-import { AppModule } from '../../src/app.module';
+import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken, TypeOrmModule } from '@nestjs/typeorm';
 import { configService } from '../../src/config/config.service';
-import { Admin } from '../../src/db/entities/admin/admin.entity';
-import { JwtAuthGuard } from '../../src/modules/auth/jwt-auth.guard';
+import { AppModule } from '../../src/app.module';
+import * as request from 'supertest';
+import { Course } from '../../src/db/entities/course/course.entity';
 import { UserRoles } from '../../src/constants';
+import { JwtAuthGuard } from '../../src/modules/auth/jwt-auth.guard';
 
-const adminInput = {
-  first_name: 'John',
-  last_name: 'Doe',
-  email: 'john.doe@email.com',
-  password: '123456789',
-  is_active: true,
+const courseInput = {
+  title: 'JavaScript',
+  description: 'This course about JavaScript',
 };
 const verifiedUser = {
   id: 'id',
@@ -26,9 +23,9 @@ const verifiedUser = {
   role: UserRoles.ADMIN,
 };
 
-describe('AdminsController (e2e)', () => {
+describe('CoursesController (e2e)', () => {
   let app: INestApplication;
-  let repository: Repository<Admin>;
+  let repository: Repository<Course>;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -52,29 +49,27 @@ describe('AdminsController (e2e)', () => {
       new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
     );
     await app.init();
-    repository = await app.resolve(getRepositoryToken(Admin));
-    await repository.query('DELETE FROM public.admin;');
+    repository = await app.resolve(getRepositoryToken(Course));
+    await repository.query('DELETE FROM public.course;');
   });
 
   afterAll(async () => {
-    await repository.query('DELETE FROM public.admin;');
+    await repository.query('DELETE FROM public.course;');
     await app.close();
   });
 
-  describe('Create a user', () => {
-    it('/create (POST): should create a new admin by admin', () => {
+  describe('Create course', () => {
+    it('/create (POST): should create a new course', () => {
       return request(app.getHttpServer())
-        .post('/admins/create')
-        .send(adminInput)
+        .post('/courses/create')
+        .send(courseInput)
         .expect(201)
         .then((response) => {
           expect(response.body).toEqual({
             id: expect.any(String),
-            first_name: adminInput.first_name,
-            last_name: adminInput.last_name,
-            email: adminInput.email,
-            is_active: adminInput.is_active,
-            role: UserRoles.ADMIN,
+            title: courseInput.title,
+            description: courseInput.description,
+            is_published: false,
             created_at: expect.any(String),
             updated_at: expect.any(String),
           });
@@ -83,19 +78,28 @@ describe('AdminsController (e2e)', () => {
 
     it('/create (POST): should return a validation error', () => {
       return request(app.getHttpServer())
-        .post('/admins/create')
+        .post('/courses/create')
         .send({ data: 'wrong-data' })
         .expect(400);
     });
+  });
 
-    it('/create (POST): should return an error when a user already exists', () => {
-      return request(app.getHttpServer())
-        .post('/admins/create')
-        .send(adminInput)
-        .expect(400, {
-          statusCode: 400,
-          message: 'A user with this email already exists',
-        });
+  describe('Get courses by status', () => {
+    it('/ (POST): should return courses by status', async () => {
+      const courses = await request(app.getHttpServer())
+        .post('/courses')
+        .send({ is_published: false })
+        .expect(201);
+
+      expect(courses.body).toEqual(expect.any(Array));
+      expect(courses.body.length).toBe(1);
+      expect(courses.body[0]).toEqual({
+        ...courseInput,
+        id: expect.any(String),
+        is_published: false,
+        created_at: expect.any(String),
+        updated_at: expect.any(String),
+      });
     });
   });
 });

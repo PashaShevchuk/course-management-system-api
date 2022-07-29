@@ -7,7 +7,7 @@ import {
 import * as request from 'supertest';
 import { Repository } from 'typeorm';
 import { AppModule } from '../../src/app.module';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { getRepositoryToken, TypeOrmModule } from '@nestjs/typeorm';
 import { configService } from '../../src/config/config.service';
 import { Admin } from '../../src/db/entities/admin/admin.entity';
 import { UserRoles } from '../../src/constants';
@@ -56,7 +56,7 @@ describe('AuthController (e2e)', () => {
       new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
     );
     await app.init();
-    repository = moduleFixture.get('AdminRepository');
+    repository = await app.resolve(getRepositoryToken(Admin));
     await repository.query('DELETE FROM public.admin;');
   });
 
