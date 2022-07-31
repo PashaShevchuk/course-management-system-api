@@ -1,0 +1,33 @@
+version: '3.7'
+services:
+  db:
+    build:
+      context: .local/postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DATABASE}
+    ports:
+      - "5432:5432"
+    volumes:
+      - ${PG_VOLUME}:/var/lib/postgresql
+
+  redis:
+    container_name: cms-redis
+    restart: always
+    image: redis:6.2-alpine
+    ports:
+      - "6380:6379"
+    volumes:
+      - ${REDIS_VOLUME}:/var/lib/redis
+
+  test_db:
+    build:
+      context: .local/postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DATABASE_E2E}
+    ports:
+      - "5437:5432"

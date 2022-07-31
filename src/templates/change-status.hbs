@@ -1,0 +1,15 @@
+<h3>Hello {{ name }},</h3>
+
+{{#if status}}
+  <p>The administrator has verified your account.</p>
+  <p>Now you can log in.</p>
+{{/if}}
+
+
+{{#unless status}}
+  <p>The administrator has blocked your account</p>
+{{/unless}}
+
+<hr>
+
+<p>Course Management System</p>
