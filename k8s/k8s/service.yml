@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: cms-api
+  labels:
+    app: cms-api
+spec:
+  type: LoadBalancer
+  selector:
+    app: cms-api
+  ports:
+    - port: 3000
+      targetPort: 3000
