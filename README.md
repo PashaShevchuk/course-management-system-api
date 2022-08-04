@@ -4,7 +4,7 @@ Course Management System API is an online management application. Its main purpo
 between students and instructors in college during the period of submission of assignments and for getting appropriate
 feedback from instructors.
 
-## Pre-reqs
+## Pre-requirements
 
 - Docker installed locally. [Debian](https://docs.docker.com/engine/install/debian/)
   or [Ubuntu](https://docs.docker.com/engine/install/ubuntu/) or other distributive
@@ -53,6 +53,12 @@ $ npm run migration:create --name=foo
 $ npm run migration:generate --name=bar
 ```
 
+## Deployment
+Deployment of the application for this repository is performed automatically by pushing the next tag in the next format:
+
+`deploy-DDMMYYY-X`. Where `DDMMYYYY` is the date and the `X` is the release number.
+> Examples of the tags: `deploy-02082022-1`, `deploy-24082022-2`.
+>
 ## Test
 
 ```bash
