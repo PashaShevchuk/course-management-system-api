@@ -24,3 +24,4 @@ lerna-debug.log*
 .ormconfig.json
 service-account-buckets.json
 course-management-system-api-63430c976ec8.json
+api-secrets.yml
