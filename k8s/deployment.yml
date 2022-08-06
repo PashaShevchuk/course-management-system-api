@@ -104,23 +104,23 @@ spec:
                   key: MAIL_SERVICE
             - name: PROJECT_ID
               valueFrom:
-                secretKeyRef:
-                  name: api-secrets
+                configMapKeyRef:
+                  name: api-config-map
                   key: PROJECT_ID
             - name: GCP_PRIVATE_KEY
               valueFrom:
-                secretKeyRef:
-                  name: api-secrets
+                configMapKeyRef:
+                  name: api-config-map
                   key: GCP_PRIVATE_KEY
             - name: CLIENT_EMAIL
               valueFrom:
-                secretKeyRef:
-                  name: api-secrets
+                configMapKeyRef:
+                  name: api-config-map
                   key: CLIENT_EMAIL
             - name: HW_BUCKET
               valueFrom:
-                secretKeyRef:
-                  name: api-secrets
+                configMapKeyRef:
+                  name: api-config-map
                   key: HW_BUCKET
             - name: FILE_SIZE
               valueFrom:

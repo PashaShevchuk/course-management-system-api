@@ -348,6 +348,10 @@ export class StudentsService {
       },
     });
 
+    if (!lessonData) {
+      throw new HttpException('Data not found', HttpStatus.NOT_FOUND);
+    }
+
     return lessonData;
   }
 
