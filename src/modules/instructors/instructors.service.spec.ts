@@ -1251,52 +1251,6 @@ describe('InstructorsService', () => {
       expect(queryRunnerRollbackTransactionSpy).not.toHaveBeenCalled();
       expect(queryRunnerReleaseSpy).not.toHaveBeenCalled();
     });
-
-    it('should throw an error when set final marks', async () => {
-      instructorCourseRepository.findOne.mockResolvedValue(courseDataDBMock);
-
-      const queryRunnerConnectSpy = jest.spyOn(mockedQueryRunner, 'connect');
-      const queryRunnerStartTransactionSpy = jest.spyOn(
-        mockedQueryRunner,
-        'startTransaction',
-      );
-      const queryRunnerCommitTransactionSpy = jest.spyOn(
-        mockedQueryRunner,
-        'commitTransaction',
-      );
-      const queryRunnerRollbackTransactionSpy = jest.spyOn(
-        mockedQueryRunner,
-        'rollbackTransaction',
-      );
-      const queryRunnerReleaseSpy = jest.spyOn(mockedQueryRunner, 'release');
-      const lessonRepositoryQueryBuilderSpy = jest
-        .spyOn(lessonRepository, 'query')
-        .mockResolvedValue([finalMarkMock]);
-      const studentCourseRepositoryQueryBuilderSpy = jest
-        .spyOn(studentCourseRepository, 'createQueryBuilder')
-        .mockRejectedValue('error');
-
-      try {
-        await instructorsService.putFinalMarksForStudents(
-          instructorIdMock,
-          courseIdMock,
-        );
-      } catch (err) {
-        expect(instructorCourseRepository.findOne).toHaveBeenCalledWith({
-          where: {
-            instructor: { id: instructorIdMock },
-            course: { id: courseIdMock },
-          },
-        });
-        expect(lessonRepositoryQueryBuilderSpy).toHaveBeenCalled();
-        expect(queryRunnerConnectSpy).toHaveBeenCalled();
-        expect(queryRunnerStartTransactionSpy).toHaveBeenCalled();
-        expect(studentCourseRepositoryQueryBuilderSpy).toHaveBeenCalled();
-        expect(queryRunnerCommitTransactionSpy).not.toHaveBeenCalled();
-        expect(queryRunnerRollbackTransactionSpy).toHaveBeenCalled();
-        expect(queryRunnerReleaseSpy).toHaveBeenCalled();
-      }
-    });
   });
 
   describe('putFinalMarkForStudent', () => {
@@ -1509,52 +1463,6 @@ describe('InstructorsService', () => {
       expect(queryRunnerCommitTransactionSpy).not.toHaveBeenCalled();
       expect(queryRunnerRollbackTransactionSpy).not.toHaveBeenCalled();
       expect(queryRunnerReleaseSpy).not.toHaveBeenCalled();
-    });
-
-    it('should throw an error when set pass a course', async () => {
-      instructorCourseRepository.findOne.mockResolvedValue(courseDataDBMock);
-
-      const queryRunnerConnectSpy = jest.spyOn(mockedQueryRunner, 'connect');
-      const queryRunnerStartTransactionSpy = jest.spyOn(
-        mockedQueryRunner,
-        'startTransaction',
-      );
-      const queryRunnerCommitTransactionSpy = jest.spyOn(
-        mockedQueryRunner,
-        'commitTransaction',
-      );
-      const queryRunnerRollbackTransactionSpy = jest.spyOn(
-        mockedQueryRunner,
-        'rollbackTransaction',
-      );
-      const queryRunnerReleaseSpy = jest.spyOn(mockedQueryRunner, 'release');
-      const lessonRepositoryQueryBuilderSpy = jest
-        .spyOn(lessonRepository, 'query')
-        .mockResolvedValue([studentMarkMock]);
-      const studentCourseRepositoryQueryBuilderSpy = jest
-        .spyOn(studentCourseRepository, 'createQueryBuilder')
-        .mockRejectedValue('error');
-
-      try {
-        await instructorsService.putPassCourseForStudents(
-          instructorIdMock,
-          courseIdMock,
-        );
-      } catch (err) {
-        expect(instructorCourseRepository.findOne).toHaveBeenCalledWith({
-          where: {
-            instructor: { id: instructorIdMock },
-            course: { id: courseIdMock },
-          },
-        });
-        expect(lessonRepositoryQueryBuilderSpy).toHaveBeenCalled();
-        expect(queryRunnerConnectSpy).toHaveBeenCalled();
-        expect(queryRunnerStartTransactionSpy).toHaveBeenCalled();
-        expect(studentCourseRepositoryQueryBuilderSpy).toHaveBeenCalled();
-        expect(queryRunnerCommitTransactionSpy).not.toHaveBeenCalled();
-        expect(queryRunnerRollbackTransactionSpy).toHaveBeenCalled();
-        expect(queryRunnerReleaseSpy).toHaveBeenCalled();
-      }
     });
   });
 });
