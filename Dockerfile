@@ -9,9 +9,9 @@ COPY package*.json ./
 
 RUN npm ci
 
-RUN npm run test:cov
-
 COPY . .
+
+RUN npm run test:cov
 
 ARG PORT=3000
 ENV PORT=$PORT
