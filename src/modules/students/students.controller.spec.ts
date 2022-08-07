@@ -1,7 +1,10 @@
-import { StudentsController } from './students.controller';
-import { StudentsService } from './students.service';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
+import * as httpMocks from 'node-mocks-http';
+import { Readable } from 'stream';
+import { StudentsController } from './students.controller';
+import { StudentsService } from './students.service';
 import { AuthService } from '../auth/auth.service';
 import { ConfigService } from '../../config/config.service';
 import { RedisService } from '../redis/redis.service';
@@ -20,7 +23,8 @@ import { CourseFeedback } from '../../db/entities/course-feedback/course-feedbac
 import { Homework } from '../../db/entities/homework/homework.entity';
 import { StorageService } from '../storage/storage.service';
 import { studentLessonDataExampleDto } from './dto/student-lesson-data-example.dto';
-import { DataSource } from 'typeorm';
+import { StudentMark } from '../../db/entities/student-mark/student-mark.entity';
+import { UploadHomeworkFileDto } from './dto/upload-homework-file.dto';
 
 const mockRepository = () => ({
   find: jest.fn(),
@@ -28,9 +32,13 @@ const mockRepository = () => ({
   save: jest.fn(),
   delete: jest.fn(),
 });
+
+let resMock;
+
 const studentIdMock = 'student-id';
 const courseIdMock = 'course-id';
 const lessonIdMock = 'lesson-id';
+const homeworkIdMock = 'homework-id';
 
 describe('StudentsController', () => {
   let studentsController: StudentsController;
@@ -62,6 +70,10 @@ describe('StudentsController', () => {
           useFactory: mockRepository,
         },
         {
+          provide: getRepositoryToken(StudentMark),
+          useFactory: mockRepository,
+        },
+        {
           provide: StorageService,
           useValue: {},
         },
@@ -87,6 +99,8 @@ describe('StudentsController', () => {
         },
       ],
     }).compile();
+
+    resMock = httpMocks.createResponse();
 
     studentsService = module.get(StudentsService);
     studentsController = module.get(StudentsController);
@@ -265,21 +279,19 @@ describe('StudentsController', () => {
   describe('getCourseFeedbacks', () => {
     it('should get student course feedback', async () => {
       const reqMock = { user: { id: studentIdMock } };
-      const result = new CourseFeedback();
+      const result = [new CourseFeedback()];
 
       jest
-        .spyOn(studentsService, 'getCourseFeedback')
+        .spyOn(studentsService, 'getCourseFeedbacks')
         .mockImplementation(() => Promise.resolve(result));
 
-      await studentsController.getCourseFeedback(reqMock, studentIdMock);
-
-      expect(studentsService.getCourseFeedback).toHaveBeenCalledWith(
+      expect(
+        await studentsController.getCourseFeedbacks(reqMock, studentIdMock),
+      ).toBe(result);
+      expect(studentsService.getCourseFeedbacks).toHaveBeenCalledWith(
         reqMock.user.id,
         studentIdMock,
       );
-      expect(
-        await studentsController.getCourseFeedback(reqMock, studentIdMock),
-      ).toBe(result);
     });
   });
 
@@ -303,6 +315,86 @@ describe('StudentsController', () => {
         reqMock.user.id,
         courseIdMock,
         lessonIdMock,
+      );
+    });
+  });
+
+  describe('uploadHomeworkFile', () => {
+    it('should upload a homework file', async () => {
+      const reqMock = { user: { id: studentIdMock } };
+      const dto = new UploadHomeworkFileDto();
+      const buffer = Buffer.from('file content');
+      const mockReadableStream = Readable.from(buffer);
+      const fileMock = {
+        buffer: buffer,
+        fieldname: 'fieldname',
+        originalname: 'original-filename',
+        encoding: '7bit',
+        mimetype: 'file-mimetype',
+        destination: 'destination-path',
+        filename: 'file-name',
+        path: 'file-path',
+        size: 955578,
+        stream: mockReadableStream,
+      };
+
+      jest
+        .spyOn(studentsService, 'uploadHomeworkFile')
+        .mockImplementation(() => Promise.resolve());
+
+      await studentsController.uploadHomeworkFile(reqMock, dto, fileMock);
+
+      expect(studentsService.uploadHomeworkFile).toHaveBeenCalledWith(
+        reqMock.user.id,
+        dto.course_id,
+        dto.lesson_id,
+        fileMock,
+      );
+    });
+  });
+
+  describe('getHomeworkFile', () => {
+    it('should get a homework file', async () => {
+      const reqMock = { user: { id: studentIdMock } };
+      const buffer = Buffer.from('file content');
+      const mockReadableStream = Readable.from(buffer);
+      const fileMock = {
+        contentType: 'text/html',
+        stream: mockReadableStream,
+      };
+
+      jest
+        .spyOn(studentsService, 'getHomeworkFile')
+        .mockImplementation(() => Promise.resolve(fileMock));
+
+      await studentsController.getHomeworkFile(
+        homeworkIdMock,
+        reqMock,
+        resMock,
+      );
+
+      expect(studentsService.getHomeworkFile).toHaveBeenCalledWith(
+        reqMock.user.id,
+        homeworkIdMock,
+      );
+    });
+  });
+
+  describe('getStudentCourseData', () => {
+    it('should get student course data', async () => {
+      const reqMock = { user: { id: courseIdMock } };
+      const result = new StudentCourse();
+
+      jest
+        .spyOn(studentsService, 'getStudentCourseData')
+        .mockImplementation(() => Promise.resolve(result));
+
+      expect(
+        await studentsController.getStudentCourseData(reqMock, courseIdMock),
+      ).toBe(result);
+      expect(studentsService.getStudentCourseData).toHaveBeenCalledWith(
+        reqMock.user.id,
+        courseIdMock,
       );
     });
   });

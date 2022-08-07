@@ -1,7 +1,10 @@
-import { InstructorsController } from './instructors.controller';
-import { InstructorsService } from './instructors.service';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
+import { Readable } from 'stream';
+import * as httpMocks from 'node-mocks-http';
+import { InstructorsController } from './instructors.controller';
+import { InstructorsService } from './instructors.service';
 import { AuthService } from '../auth/auth.service';
 import { ConfigService } from '../../config/config.service';
 import { RedisService } from '../redis/redis.service';
@@ -23,9 +26,10 @@ import { UpdateFeedbackDto } from './dto/update-feedback.dto';
 import { StudentMark } from '../../db/entities/student-mark/student-mark.entity';
 import { PutMarkForStudentDto } from './dto/put-mark-for-student.dto';
 import { UpdateMarkDto } from './dto/update-mark.dto';
-import { DataSource } from 'typeorm';
 import { Homework } from '../../db/entities/homework/homework.entity';
 import { StorageService } from '../storage/storage.service';
+import { PutFinalMarkForStudentDto } from './dto/put-final-mark-for-student.dto';
+import { GetHomeworkFileDto } from './dto/get-homework-file.dto';
 
 const mockRepository = () => ({
   find: jest.fn(),
@@ -33,6 +37,9 @@ const mockRepository = () => ({
   save: jest.fn(),
   delete: jest.fn(),
 });
+
+let resMock;
+
 const instructorIdMock = 'instructor-id';
 const courseIdMock = 'course-id';
 const lessonIdMock = 'lesson-id';
@@ -100,6 +107,8 @@ describe('InstructorsController', () => {
         },
       ],
     }).compile();
+
+    resMock = httpMocks.createResponse();
 
     instructorsService = module.get(InstructorsService);
     instructorsController = module.get(InstructorsController);
@@ -313,15 +322,13 @@ describe('InstructorsController', () => {
         .spyOn(instructorsService, 'getCourseFeedbacks')
         .mockImplementation(() => Promise.resolve(result));
 
-      await instructorsController.getCourseFeedbacks(reqMock, courseIdMock);
-
+      expect(
+        await instructorsController.getCourseFeedbacks(reqMock, courseIdMock),
+      ).toBe(result);
       expect(instructorsService.getCourseFeedbacks).toHaveBeenCalledWith(
         reqMock.user.id,
         courseIdMock,
       );
-      expect(
-        await instructorsController.getCourseFeedbacks(reqMock, courseIdMock),
-      ).toBe(result);
     });
   });
 
@@ -437,6 +444,149 @@ describe('InstructorsController', () => {
       await instructorsController.updateStudentMark(reqMock, dto);
 
       expect(instructorsService.updateStudentMark).toHaveBeenCalledWith(
+        reqMock.user.id,
+        dto,
+      );
+    });
+  });
+
+  describe('putFinalMarksForStudents', () => {
+    it('should put final mark for all students', async () => {
+      const reqMock = { user: { id: instructorIdMock } };
+
+      jest
+        .spyOn(instructorsService, 'putFinalMarksForStudents')
+        .mockImplementation(() => Promise.resolve());
+
+      await instructorsController.putFinalMarksForStudents(
+        reqMock,
+        courseIdMock,
+      );
+
+      expect(instructorsService.putFinalMarksForStudents).toHaveBeenCalledWith(
+        reqMock.user.id,
+        courseIdMock,
+      );
+    });
+  });
+
+  describe('putPassCourseForStudents', () => {
+    it('should put pass course for all students', async () => {
+      const reqMock = { user: { id: instructorIdMock } };
+
+      jest
+        .spyOn(instructorsService, 'putPassCourseForStudents')
+        .mockImplementation(() => Promise.resolve());
+
+      await instructorsController.putPassCourseForStudents(
+        reqMock,
+        courseIdMock,
+      );
+
+      expect(instructorsService.putPassCourseForStudents).toHaveBeenCalledWith(
+        reqMock.user.id,
+        courseIdMock,
+      );
+    });
+  });
+
+  describe('putPassCourseForStudent', () => {
+    it('should put course pass for a student', async () => {
+      const reqMock = { user: { id: instructorIdMock } };
+      const dto = new PutFinalMarkForStudentDto();
+
+      jest
+        .spyOn(instructorsService, 'putPassCourseForStudent')
+        .mockImplementation(() => Promise.resolve());
+
+      await instructorsController.putPassCourseForStudent(reqMock, dto);
+
+      expect(instructorsService.putPassCourseForStudent).toHaveBeenCalledWith(
+        reqMock.user.id,
+        dto,
+      );
+    });
+  });
+
+  describe('getStudentsData', () => {
+    it('should get students data', async () => {
+      const reqMock = { user: { id: instructorIdMock } };
+      const result = [new StudentCourse()];
+
+      jest
+        .spyOn(instructorsService, 'getStudentsData')
+        .mockImplementation(() => Promise.resolve(result));
+
+      expect(
+        await instructorsController.getStudentsData(reqMock, courseIdMock),
+      ).toBe(result);
+      expect(instructorsService.getStudentsData).toHaveBeenCalledWith(
+        reqMock.user.id,
+        courseIdMock,
+      );
+    });
+  });
+
+  describe('getLessonHomeworks', () => {
+    it('should get lesson homeworks', async () => {
+      const reqMock = { user: { id: instructorIdMock } };
+      const result = [new Homework()];
+
+      jest
+        .spyOn(instructorsService, 'getLessonHomeworks')
+        .mockImplementation(() => Promise.resolve(result));
+
+      expect(
+        await instructorsController.getLessonHomeworks(
+          reqMock,
+          courseIdMock,
+          lessonIdMock,
+        ),
+      ).toBe(result);
+      expect(instructorsService.getLessonHomeworks).toHaveBeenCalledWith(
+        reqMock.user.id,
+        courseIdMock,
+        lessonIdMock,
+      );
+    });
+  });
+
+  describe('putFinalMarkForStudent', () => {
+    it('should put final mark for a student', async () => {
+      const reqMock = { user: { id: instructorIdMock } };
+      const dto = new PutFinalMarkForStudentDto();
+
+      jest
+        .spyOn(instructorsService, 'putFinalMarkForStudent')
+        .mockImplementation(() => Promise.resolve());
+
+      await instructorsController.putFinalMarkForStudent(reqMock, dto);
+
+      expect(instructorsService.putFinalMarkForStudent).toHaveBeenCalledWith(
+        reqMock.user.id,
+        dto,
+      );
+    });
+  });
+
+  describe('getLessonHomeworkFile', () => {
+    it('should get a lesson homework file', async () => {
+      const buffer = Buffer.from('file content');
+      const mockReadableStream = Readable.from(buffer);
+      const fileMock = {
+        contentType: 'text/html',
+        stream: mockReadableStream,
+      };
+      const reqMock = { user: { id: instructorIdMock } };
+      const dto = new GetHomeworkFileDto();
+
+      jest
+        .spyOn(instructorsService, 'getLessonHomeworkFile')
+        .mockImplementation(() => Promise.resolve(fileMock));
+
+      await instructorsController.getLessonHomeworkFile(reqMock, resMock, dto);
+
+      expect(instructorsService.getLessonHomeworkFile).toHaveBeenCalledWith(
         reqMock.user.id,
         dto,
       );

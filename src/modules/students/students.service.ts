@@ -27,6 +27,7 @@ import { StorageService } from '../storage/storage.service';
 import { StorageFile } from '../storage/storage-file';
 import { Homework } from '../../db/entities/homework/homework.entity';
 import { studentLessonDataExampleDto } from './dto/student-lesson-data-example.dto';
+import { StudentMark } from '../../db/entities/student-mark/student-mark.entity';
 
 @Injectable()
 export class StudentsService {
@@ -44,6 +45,8 @@ export class StudentsService {
     private readonly courseFeedbackRepository: Repository<CourseFeedback>,
     @InjectRepository(Homework)
     private readonly homeworkRepository: Repository<Homework>,
+    @InjectRepository(StudentMark)
+    private readonly studentMarkRepository: Repository<StudentMark>,
     @Inject(forwardRef(() => AuthService))
     private readonly authService: AuthService,
     private readonly configService: ConfigService,
@@ -276,49 +279,35 @@ export class StudentsService {
   ): Promise<Lesson[]> {
     this.logger.log(`${this.LOGGER_PREFIX} get student course lessons`);
 
-    const studentCourse = await this.studentCourseRepository.findOne({
-      where: {
-        student: { id: studentId },
-        course: { id: courseId },
-      },
-    });
-
-    if (!studentCourse) {
-      throw new HttpException('Data not found', HttpStatus.NOT_FOUND);
-    }
-
     const lessons = await this.lessonRepository.find({
-      where: { course: { id: courseId } },
+      where: {
+        course: {
+          id: courseId,
+          studentCourses: { student: { id: studentId } },
+        },
+      },
     });
 
     return lessons;
   }
 
-  async getCourseFeedback(
+  async getCourseFeedbacks(
     studentId: string,
     courseId: string,
-  ): Promise<CourseFeedback> {
-    this.logger.log(`${this.LOGGER_PREFIX} get student course feedback`);
+  ): Promise<CourseFeedback[]> {
+    this.logger.log(`${this.LOGGER_PREFIX} get student course feedbacks`);
 
-    const studentCourse = await this.studentCourseRepository.findOne({
+    const courseFeedbacks = await this.courseFeedbackRepository.find({
       where: {
         student: { id: studentId },
-        course: { id: courseId },
+        course: {
+          id: courseId,
+          studentCourses: { student: { id: studentId } },
+        },
       },
     });
 
-    if (!studentCourse) {
-      throw new HttpException('Course not found', HttpStatus.NOT_FOUND);
-    }
-
-    const courseFeedback = await this.courseFeedbackRepository.findOne({
-      where: {
-        course: { id: courseId },
-        student: { id: studentId },
-      },
-    });
-
-    return courseFeedback;
+    return courseFeedbacks;
   }
 
   async getLessonData(
@@ -331,24 +320,41 @@ export class StudentsService {
     const lessonData = await this.lessonRepository.findOne({
       where: {
         id: lessonId,
-        course: { id: courseId },
-        marks: { student: { id: studentId } },
-        homeworks: { student: { id: studentId } },
-      },
-      relations: {
-        marks: true,
-        homeworks: true,
-      },
-      select: {
-        homeworks: {
-          id: true,
-          created_at: true,
-          updated_at: true,
+        course: {
+          id: courseId,
+          studentCourses: { student: { id: studentId } },
         },
       },
     });
 
-    return lessonData;
+    if (!lessonData) {
+      throw new HttpException('Data not found', HttpStatus.NOT_FOUND);
+    }
+
+    const homeworkData = await this.homeworkRepository.findOne({
+      where: {
+        student: { id: studentId },
+        lesson: { id: lessonId },
+      },
+      select: {
+        id: true,
+        created_at: true,
+        updated_at: true,
+      },
+    });
+
+    const markData = await this.studentMarkRepository.findOne({
+      where: {
+        student: { id: studentId },
+        lesson: { id: lessonId },
+      },
+    });
+
+    return {
+      ...lessonData,
+      homework: homeworkData,
+      mark: markData,
+    };
   }
 
   async getStudentCourseData(

@@ -216,17 +216,17 @@ export class StudentsController {
     return this.studentsService.getLessonData(req.user.id, courseId, lessonId);
   }
 
-  @ApiOperation({ summary: 'Get student course feedback (only for student)' })
-  @ApiResponse({ type: CourseFeedback })
+  @ApiOperation({ summary: 'Get student course feedbacks (only for student)' })
+  @ApiResponse({ type: [CourseFeedback] })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoles.STUDENT)
-  @Get('courses/:id/feedback')
-  async getCourseFeedback(
+  @Get('courses/:id/feedbacks')
+  async getCourseFeedbacks(
     @Req() req,
     @Param('id') courseId: string,
-  ): Promise<CourseFeedback> {
-    this.logger.log(`${this.LOGGER_PREFIX} get student course feedback`);
-    return this.studentsService.getCourseFeedback(req.user.id, courseId);
+  ): Promise<CourseFeedback[]> {
+    this.logger.log(`${this.LOGGER_PREFIX} get student course feedbacks`);
+    return this.studentsService.getCourseFeedbacks(req.user.id, courseId);
   }
 
   @ApiOperation({ summary: 'Get all students (only for admin)' })

@@ -22,6 +22,14 @@ const mockRepository = () => ({
   save: jest.fn(),
   update: jest.fn(),
   delete: jest.fn(),
+  createQueryBuilder: jest.fn(() => ({
+    update: jest.fn().mockReturnThis(),
+    set: jest.fn().mockReturnThis(),
+    where: jest.fn().mockReturnThis(),
+    andWhere: jest.fn().mockReturnThis(),
+    execute: jest.fn().mockReturnThis(),
+  })),
+  query: jest.fn(),
 });
 const mockedAuthService = {
   hashPassword: jest.fn(() => Promise.resolve(hashMock)),
@@ -33,6 +41,24 @@ const mockedConfigService = {
 const mockedMailService = {
   sendMail: jest.fn(() => Promise.resolve()),
 };
+const mockedStorageService = {
+  get: jest.fn(() => Promise.resolve()),
+  save: jest.fn(() => Promise.resolve()),
+  delete: jest.fn(() => Promise.resolve()),
+};
+const mockedQueryRunnerManager = {
+  save: jest.fn(() => Promise.resolve()),
+  delete: jest.fn(() => Promise.resolve()),
+};
+const mockedQueryRunner = {
+  connect: jest.fn(() => Promise.resolve()),
+  startTransaction: jest.fn(() => Promise.resolve()),
+  commitTransaction: jest.fn(() => Promise.resolve()),
+  rollbackTransaction: jest.fn(() => Promise.resolve()),
+  release: jest.fn(() => Promise.resolve()),
+  manager: mockedQueryRunnerManager,
+};
+
 const instructorIdMock = 'instructor-id';
 const hashMock = 'hash';
 const studentIdMock = 'student-id';
@@ -40,6 +66,7 @@ const courseIdMock = 'course-id';
 const feedbackIdMock = 'feedback-id';
 const lessonIdMock = 'lesson-id';
 const markIdMock = 'mark-id';
+const homeworkIdMock = 'homework-id';
 const createInstructorDataMock = {
   first_name: 'New Admin',
   last_name: 'New Admin',
@@ -146,6 +173,16 @@ const lessonMarkDataMock = {
     updated_at: '2022-06-17T12:21:28.478Z',
   },
 };
+const lessonHomeworkData = {
+  id: homeworkIdMock,
+  created_at: '2022-07-22T13:34:20.461Z',
+  updated_at: '2022-07-22T13:34:20.461Z',
+  student: {
+    id: studentIdMock,
+    first_name: 'John',
+    last_name: 'Doe',
+  },
+};
 
 describe('InstructorsService', () => {
   let instructorsService: InstructorsService;
@@ -155,6 +192,7 @@ describe('InstructorsService', () => {
   let lessonRepository;
   let courseFeedbackRepository;
   let studentMarkRepository;
+  let homeworkRepository;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -190,11 +228,11 @@ describe('InstructorsService', () => {
         },
         {
           provide: StorageService,
-          useValue: {},
+          useValue: mockedStorageService,
         },
         {
           provide: DataSource,
-          useValue: {},
+          useValue: { createQueryRunner: () => mockedQueryRunner },
         },
         {
           provide: AuthService,
@@ -220,6 +258,7 @@ describe('InstructorsService', () => {
     lessonRepository = module.get(getRepositoryToken(Lesson));
     courseFeedbackRepository = module.get(getRepositoryToken(CourseFeedback));
     studentMarkRepository = module.get(getRepositoryToken(StudentMark));
+    homeworkRepository = module.get(getRepositoryToken(Homework));
   });
 
   afterEach(() => jest.clearAllMocks());
@@ -574,7 +613,7 @@ describe('InstructorsService', () => {
           createFeedbackDataMock,
         ),
       ).rejects.toThrow(
-        new HttpException('Course not found', HttpStatus.NOT_FOUND),
+        new HttpException('Data not found', HttpStatus.NOT_FOUND),
       );
     });
 
@@ -650,8 +689,9 @@ describe('InstructorsService', () => {
 
   describe('getCourseFeedbacks', () => {
     it('should get instructor course feedbacks', async () => {
-      instructorCourseRepository.findOne.mockResolvedValue(courseDataDBMock);
-      courseFeedbackRepository.find.mockResolvedValue(courseFeedbackDataDBMock);
+      instructorCourseRepository.findOne.mockResolvedValue({
+        course: { courseFeedbacks: [courseFeedbackDataDBMock] },
+      });
 
       const result = await instructorsService.getCourseFeedbacks(
         instructorIdMock,
@@ -660,17 +700,19 @@ describe('InstructorsService', () => {
 
       expect(instructorCourseRepository.findOne).toHaveBeenCalledWith({
         where: {
+          course: {
+            id: courseIdMock,
+            courseFeedbacks: {
+              instructor: { id: instructorIdMock },
+            },
+          },
           instructor: { id: instructorIdMock },
-          course: { id: courseIdMock },
+        },
+        relations: {
+          course: { courseFeedbacks: true },
         },
       });
-      expect(courseFeedbackRepository.find).toHaveBeenCalledWith({
-        where: {
-          course: { id: courseIdMock },
-          instructor: { id: instructorIdMock },
-        },
-      });
-      expect(result).toEqual(courseFeedbackDataDBMock);
+      expect(result).toEqual([courseFeedbackDataDBMock]);
     });
 
     it('should throw an error if course is not found', async () => {
@@ -679,7 +721,7 @@ describe('InstructorsService', () => {
       await expect(
         instructorsService.getCourseFeedbacks(instructorIdMock, courseIdMock),
       ).rejects.toThrow(
-        new HttpException('Course not found', HttpStatus.NOT_FOUND),
+        new HttpException('Data not found', HttpStatus.NOT_FOUND),
       );
     });
   });
@@ -971,6 +1013,548 @@ describe('InstructorsService', () => {
         },
       });
       expect(result).toEqual([]);
+    });
+  });
+
+  describe('getLessonHomeworks', () => {
+    it('should get lesson homeworks', async () => {
+      homeworkRepository.find.mockResolvedValue([lessonHomeworkData]);
+
+      const result = await instructorsService.getLessonHomeworks(
+        instructorIdMock,
+        courseIdMock,
+        lessonIdMock,
+      );
+
+      expect(homeworkRepository.find).toHaveBeenCalledWith({
+        where: {
+          lesson: {
+            id: lessonIdMock,
+            course: {
+              id: courseIdMock,
+              instructorCourses: { instructor: { id: instructorIdMock } },
+            },
+          },
+        },
+        relations: {
+          student: true,
+        },
+        select: {
+          id: true,
+          created_at: true,
+          updated_at: true,
+          student: {
+            id: true,
+            first_name: true,
+            last_name: true,
+          },
+        },
+      });
+      expect(result).toEqual([lessonHomeworkData]);
+    });
+  });
+
+  describe('getStudentsData', () => {
+    it('should get students data', async () => {
+      const courseWithStudentDataMock = {
+        ...studentCourseDataDBMock,
+        final_mark: 43,
+        is_course_pass: true,
+      };
+
+      instructorCourseRepository.findOne.mockResolvedValue(courseDataDBMock);
+      studentCourseRepository.find.mockResolvedValue([
+        courseWithStudentDataMock,
+      ]);
+
+      const result = await instructorsService.getStudentsData(
+        instructorIdMock,
+        courseIdMock,
+      );
+
+      expect(instructorCourseRepository.findOne).toHaveBeenCalledWith({
+        where: {
+          instructor: { id: instructorIdMock },
+          course: { id: courseIdMock },
+        },
+      });
+      expect(studentCourseRepository.find).toHaveBeenCalledWith({
+        where: {
+          course: { id: courseIdMock },
+        },
+        relations: {
+          student: true,
+        },
+        select: {
+          student: {
+            id: true,
+            first_name: true,
+            last_name: true,
+            email: true,
+          },
+        },
+      });
+      expect(result).toEqual([courseWithStudentDataMock]);
+    });
+  });
+
+  describe('getLessonHomeworkFile', () => {
+    const dto = {
+      homework_id: homeworkIdMock,
+      student_id: studentIdMock,
+      lesson_id: lessonIdMock,
+      course_id: courseIdMock,
+    };
+
+    it('should get a homework file', async () => {
+      const homeworkDataMock = {
+        id: homeworkIdMock,
+        created_at: '2022-07-22T13:34:20.461Z',
+        updated_at: '2022-07-22T13:34:20.461Z',
+        file_path: 'file_path',
+      };
+
+      instructorCourseRepository.findOne.mockResolvedValue(courseDataDBMock);
+      homeworkRepository.findOne.mockResolvedValue(homeworkDataMock);
+
+      const getFileSpy = jest.spyOn(mockedStorageService, 'get');
+
+      await instructorsService.getLessonHomeworkFile(instructorIdMock, dto);
+
+      expect(instructorCourseRepository.findOne).toHaveBeenCalledWith({
+        where: {
+          instructor: { id: instructorIdMock },
+          course: { id: dto.course_id },
+        },
+      });
+      expect(homeworkRepository.findOne).toHaveBeenCalledWith({
+        where: {
+          id: dto.homework_id,
+          student: { id: dto.student_id },
+          lesson: { id: dto.lesson_id },
+        },
+      });
+      expect(getFileSpy).toHaveBeenCalledWith(homeworkDataMock.file_path);
+    });
+
+    it('should throw an error if homework file is not found', async () => {
+      instructorCourseRepository.findOne.mockResolvedValue(courseDataDBMock);
+      homeworkRepository.findOne.mockResolvedValue(null);
+
+      await expect(
+        instructorsService.getLessonHomeworkFile(instructorIdMock, dto),
+      ).rejects.toThrow(
+        new HttpException('Data not found', HttpStatus.NOT_FOUND),
+      );
+    });
+  });
+
+  describe('putFinalMarksForStudents', () => {
+    const finalMarkMock = {
+      studentId: studentIdMock,
+      final_mark: '59',
+    };
+
+    it('should put final mark for students', async () => {
+      instructorCourseRepository.findOne.mockResolvedValue(courseDataDBMock);
+
+      const queryRunnerConnectSpy = jest.spyOn(mockedQueryRunner, 'connect');
+      const queryRunnerStartTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'startTransaction',
+      );
+      const queryRunnerCommitTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'commitTransaction',
+      );
+      const queryRunnerRollbackTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'rollbackTransaction',
+      );
+      const queryRunnerReleaseSpy = jest.spyOn(mockedQueryRunner, 'release');
+      const lessonRepositoryQueryBuilderSpy = jest
+        .spyOn(lessonRepository, 'query')
+        .mockResolvedValue([finalMarkMock]);
+      const studentCourseRepositoryQueryBuilderSpy = jest.spyOn(
+        studentCourseRepository,
+        'createQueryBuilder',
+      );
+
+      await instructorsService.putFinalMarksForStudents(
+        instructorIdMock,
+        courseIdMock,
+      );
+
+      expect(instructorCourseRepository.findOne).toHaveBeenCalledWith({
+        where: {
+          instructor: { id: instructorIdMock },
+          course: { id: courseIdMock },
+        },
+      });
+      expect(lessonRepositoryQueryBuilderSpy).toHaveBeenCalled();
+      expect(queryRunnerConnectSpy).toHaveBeenCalled();
+      expect(queryRunnerStartTransactionSpy).toHaveBeenCalled();
+      expect(studentCourseRepositoryQueryBuilderSpy).toHaveBeenCalled();
+      expect(queryRunnerCommitTransactionSpy).toHaveBeenCalled();
+      expect(queryRunnerRollbackTransactionSpy).not.toHaveBeenCalled();
+      expect(queryRunnerReleaseSpy).toHaveBeenCalled();
+    });
+
+    it('should throw an error if marks are not found', async () => {
+      instructorCourseRepository.findOne.mockResolvedValue(courseDataDBMock);
+
+      const lessonRepositoryQueryBuilderSpy = jest
+        .spyOn(lessonRepository, 'query')
+        .mockResolvedValue([]);
+      const queryRunnerConnectSpy = jest.spyOn(mockedQueryRunner, 'connect');
+      const queryRunnerStartTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'startTransaction',
+      );
+      const queryRunnerCommitTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'commitTransaction',
+      );
+      const queryRunnerRollbackTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'rollbackTransaction',
+      );
+      const queryRunnerReleaseSpy = jest.spyOn(mockedQueryRunner, 'release');
+      const studentCourseRepositoryQueryBuilderSpy = jest.spyOn(
+        studentCourseRepository,
+        'createQueryBuilder',
+      );
+
+      await expect(
+        instructorsService.putFinalMarksForStudents(
+          instructorIdMock,
+          courseIdMock,
+        ),
+      ).rejects.toThrow(
+        new HttpException(
+          'There are no grades for this course',
+          HttpStatus.NOT_FOUND,
+        ),
+      );
+
+      expect(instructorCourseRepository.findOne).toHaveBeenCalledWith({
+        where: {
+          instructor: { id: instructorIdMock },
+          course: { id: courseIdMock },
+        },
+      });
+      expect(lessonRepositoryQueryBuilderSpy).toHaveBeenCalled();
+      expect(queryRunnerConnectSpy).not.toHaveBeenCalled();
+      expect(queryRunnerStartTransactionSpy).not.toHaveBeenCalled();
+      expect(studentCourseRepositoryQueryBuilderSpy).not.toHaveBeenCalled();
+      expect(queryRunnerCommitTransactionSpy).not.toHaveBeenCalled();
+      expect(queryRunnerRollbackTransactionSpy).not.toHaveBeenCalled();
+      expect(queryRunnerReleaseSpy).not.toHaveBeenCalled();
+    });
+
+    it('should throw an error when set final marks', async () => {
+      instructorCourseRepository.findOne.mockResolvedValue(courseDataDBMock);
+
+      const queryRunnerConnectSpy = jest.spyOn(mockedQueryRunner, 'connect');
+      const queryRunnerStartTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'startTransaction',
+      );
+      const queryRunnerCommitTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'commitTransaction',
+      );
+      const queryRunnerRollbackTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'rollbackTransaction',
+      );
+      const queryRunnerReleaseSpy = jest.spyOn(mockedQueryRunner, 'release');
+      const lessonRepositoryQueryBuilderSpy = jest
+        .spyOn(lessonRepository, 'query')
+        .mockResolvedValue([finalMarkMock]);
+      const studentCourseRepositoryQueryBuilderSpy = jest
+        .spyOn(studentCourseRepository, 'createQueryBuilder')
+        .mockRejectedValue('error');
+
+      try {
+        await instructorsService.putFinalMarksForStudents(
+          instructorIdMock,
+          courseIdMock,
+        );
+      } catch (err) {
+        expect(instructorCourseRepository.findOne).toHaveBeenCalledWith({
+          where: {
+            instructor: { id: instructorIdMock },
+            course: { id: courseIdMock },
+          },
+        });
+        expect(lessonRepositoryQueryBuilderSpy).toHaveBeenCalled();
+        expect(queryRunnerConnectSpy).toHaveBeenCalled();
+        expect(queryRunnerStartTransactionSpy).toHaveBeenCalled();
+        expect(studentCourseRepositoryQueryBuilderSpy).toHaveBeenCalled();
+        expect(queryRunnerCommitTransactionSpy).not.toHaveBeenCalled();
+        expect(queryRunnerRollbackTransactionSpy).toHaveBeenCalled();
+        expect(queryRunnerReleaseSpy).toHaveBeenCalled();
+      }
+    });
+  });
+
+  describe('putFinalMarkForStudent', () => {
+    const finalMarkMock = {
+      studentId: studentIdMock,
+      final_mark: '59',
+    };
+    const dto = {
+      student_id: studentIdMock,
+      course_id: courseIdMock,
+    };
+
+    it('should put final mark for student', async () => {
+      instructorCourseRepository.findOne.mockResolvedValue(courseDataDBMock);
+
+      const lessonRepositoryQueryBuilderSpy = jest
+        .spyOn(lessonRepository, 'query')
+        .mockResolvedValue([finalMarkMock]);
+      const studentCourseRepositoryQueryBuilderSpy = jest.spyOn(
+        studentCourseRepository,
+        'createQueryBuilder',
+      );
+
+      await instructorsService.putFinalMarkForStudent(instructorIdMock, dto);
+
+      expect(instructorCourseRepository.findOne).toHaveBeenCalledWith({
+        where: {
+          instructor: { id: instructorIdMock },
+          course: { id: courseIdMock },
+        },
+      });
+      expect(lessonRepositoryQueryBuilderSpy).toHaveBeenCalled();
+      expect(studentCourseRepositoryQueryBuilderSpy).toHaveBeenCalled();
+    });
+
+    it('should throw an error if a mark is not found', async () => {
+      instructorCourseRepository.findOne.mockResolvedValue(courseDataDBMock);
+
+      const lessonRepositoryQueryBuilderSpy = jest
+        .spyOn(lessonRepository, 'query')
+        .mockResolvedValue([]);
+
+      await expect(
+        instructorsService.putFinalMarkForStudent(instructorIdMock, dto),
+      ).rejects.toThrow(
+        new HttpException('Data not found', HttpStatus.NOT_FOUND),
+      );
+      expect(instructorCourseRepository.findOne).toHaveBeenCalledWith({
+        where: {
+          instructor: { id: instructorIdMock },
+          course: { id: courseIdMock },
+        },
+      });
+      expect(lessonRepositoryQueryBuilderSpy).toHaveBeenCalled();
+    });
+  });
+
+  describe('putPassCourseForStudent', () => {
+    const studentMarkMock = {
+      studentId: studentIdMock,
+      highest_mark_sum: 60,
+      mark_sum: 26,
+    };
+    const dto = {
+      student_id: studentIdMock,
+      course_id: courseIdMock,
+    };
+
+    it('should put pass a course for student', async () => {
+      instructorCourseRepository.findOne.mockResolvedValue(courseDataDBMock);
+
+      const lessonRepositoryQueryBuilderSpy = jest
+        .spyOn(lessonRepository, 'query')
+        .mockResolvedValue([studentMarkMock]);
+      const studentCourseRepositoryQueryBuilderSpy = jest.spyOn(
+        studentCourseRepository,
+        'createQueryBuilder',
+      );
+
+      await instructorsService.putPassCourseForStudent(instructorIdMock, dto);
+
+      expect(instructorCourseRepository.findOne).toHaveBeenCalledWith({
+        where: {
+          instructor: { id: instructorIdMock },
+          course: { id: courseIdMock },
+        },
+      });
+      expect(lessonRepositoryQueryBuilderSpy).toHaveBeenCalled();
+      expect(studentCourseRepositoryQueryBuilderSpy).toHaveBeenCalled();
+    });
+
+    it('should throw an error if a mark is not found', async () => {
+      instructorCourseRepository.findOne.mockResolvedValue(courseDataDBMock);
+
+      const lessonRepositoryQueryBuilderSpy = jest
+        .spyOn(lessonRepository, 'query')
+        .mockResolvedValue([]);
+
+      await expect(
+        instructorsService.putPassCourseForStudent(instructorIdMock, dto),
+      ).rejects.toThrow(
+        new HttpException('Data not found', HttpStatus.NOT_FOUND),
+      );
+      expect(instructorCourseRepository.findOne).toHaveBeenCalledWith({
+        where: {
+          instructor: { id: instructorIdMock },
+          course: { id: courseIdMock },
+        },
+      });
+      expect(lessonRepositoryQueryBuilderSpy).toHaveBeenCalled();
+    });
+  });
+
+  describe('putPassCourseForStudents', () => {
+    const studentMarkMock = {
+      studentId: studentIdMock,
+      highest_mark_sum: 60,
+      mark_sum: 26,
+    };
+
+    it('should put pass a course for students', async () => {
+      instructorCourseRepository.findOne.mockResolvedValue(courseDataDBMock);
+
+      const lessonRepositoryQueryBuilderSpy = jest
+        .spyOn(lessonRepository, 'query')
+        .mockResolvedValue([studentMarkMock]);
+      const queryRunnerConnectSpy = jest.spyOn(mockedQueryRunner, 'connect');
+      const queryRunnerStartTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'startTransaction',
+      );
+      const studentCourseRepositoryQueryBuilderSpy = jest.spyOn(
+        studentCourseRepository,
+        'createQueryBuilder',
+      );
+      const queryRunnerCommitTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'commitTransaction',
+      );
+      const queryRunnerRollbackTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'rollbackTransaction',
+      );
+      const queryRunnerReleaseSpy = jest.spyOn(mockedQueryRunner, 'release');
+
+      await instructorsService.putPassCourseForStudents(
+        instructorIdMock,
+        courseIdMock,
+      );
+
+      expect(instructorCourseRepository.findOne).toHaveBeenCalledWith({
+        where: {
+          instructor: { id: instructorIdMock },
+          course: { id: courseIdMock },
+        },
+      });
+      expect(lessonRepositoryQueryBuilderSpy).toHaveBeenCalled();
+      expect(queryRunnerConnectSpy).toHaveBeenCalled();
+      expect(queryRunnerStartTransactionSpy).toHaveBeenCalled();
+      expect(studentCourseRepositoryQueryBuilderSpy).toHaveBeenCalled();
+      expect(queryRunnerCommitTransactionSpy).toHaveBeenCalled();
+      expect(queryRunnerRollbackTransactionSpy).not.toHaveBeenCalled();
+      expect(queryRunnerReleaseSpy).toHaveBeenCalled();
+    });
+
+    it('should throw an error if marks are not found', async () => {
+      instructorCourseRepository.findOne.mockResolvedValue(courseDataDBMock);
+
+      const lessonRepositoryQueryBuilderSpy = jest
+        .spyOn(lessonRepository, 'query')
+        .mockResolvedValue([]);
+      const queryRunnerConnectSpy = jest.spyOn(mockedQueryRunner, 'connect');
+      const queryRunnerStartTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'startTransaction',
+      );
+      const queryRunnerCommitTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'commitTransaction',
+      );
+      const queryRunnerRollbackTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'rollbackTransaction',
+      );
+      const queryRunnerReleaseSpy = jest.spyOn(mockedQueryRunner, 'release');
+      const studentCourseRepositoryQueryBuilderSpy = jest.spyOn(
+        studentCourseRepository,
+        'createQueryBuilder',
+      );
+
+      await expect(
+        instructorsService.putPassCourseForStudents(
+          instructorIdMock,
+          courseIdMock,
+        ),
+      ).rejects.toThrow(
+        new HttpException('Data not found', HttpStatus.NOT_FOUND),
+      );
+
+      expect(instructorCourseRepository.findOne).toHaveBeenCalledWith({
+        where: {
+          instructor: { id: instructorIdMock },
+          course: { id: courseIdMock },
+        },
+      });
+      expect(lessonRepositoryQueryBuilderSpy).toHaveBeenCalled();
+      expect(queryRunnerConnectSpy).not.toHaveBeenCalled();
+      expect(queryRunnerStartTransactionSpy).not.toHaveBeenCalled();
+      expect(studentCourseRepositoryQueryBuilderSpy).not.toHaveBeenCalled();
+      expect(queryRunnerCommitTransactionSpy).not.toHaveBeenCalled();
+      expect(queryRunnerRollbackTransactionSpy).not.toHaveBeenCalled();
+      expect(queryRunnerReleaseSpy).not.toHaveBeenCalled();
+    });
+
+    it('should throw an error when set pass a course', async () => {
+      instructorCourseRepository.findOne.mockResolvedValue(courseDataDBMock);
+
+      const queryRunnerConnectSpy = jest.spyOn(mockedQueryRunner, 'connect');
+      const queryRunnerStartTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'startTransaction',
+      );
+      const queryRunnerCommitTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'commitTransaction',
+      );
+      const queryRunnerRollbackTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'rollbackTransaction',
+      );
+      const queryRunnerReleaseSpy = jest.spyOn(mockedQueryRunner, 'release');
+      const lessonRepositoryQueryBuilderSpy = jest
+        .spyOn(lessonRepository, 'query')
+        .mockResolvedValue([studentMarkMock]);
+      const studentCourseRepositoryQueryBuilderSpy = jest
+        .spyOn(studentCourseRepository, 'createQueryBuilder')
+        .mockRejectedValue('error');
+
+      try {
+        await instructorsService.putPassCourseForStudents(
+          instructorIdMock,
+          courseIdMock,
+        );
+      } catch (err) {
+        expect(instructorCourseRepository.findOne).toHaveBeenCalledWith({
+          where: {
+            instructor: { id: instructorIdMock },
+            course: { id: courseIdMock },
+          },
+        });
+        expect(lessonRepositoryQueryBuilderSpy).toHaveBeenCalled();
+        expect(queryRunnerConnectSpy).toHaveBeenCalled();
+        expect(queryRunnerStartTransactionSpy).toHaveBeenCalled();
+        expect(studentCourseRepositoryQueryBuilderSpy).toHaveBeenCalled();
+        expect(queryRunnerCommitTransactionSpy).not.toHaveBeenCalled();
+        expect(queryRunnerRollbackTransactionSpy).toHaveBeenCalled();
+        expect(queryRunnerReleaseSpy).toHaveBeenCalled();
+      }
     });
   });
 });

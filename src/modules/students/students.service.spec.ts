@@ -1,6 +1,9 @@
-import { StudentsService } from './students.service';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
+import { Readable } from 'stream';
+import { HttpException, HttpStatus } from '@nestjs/common';
+import { StudentsService } from './students.service';
 import { AuthService } from '../auth/auth.service';
 import { ConfigService } from '../../config/config.service';
 import { MailService } from '../mail/mail.service';
@@ -8,11 +11,10 @@ import { Student } from '../../db/entities/student/student.entity';
 import { StudentCourse } from '../../db/entities/student-course/student-course.entity';
 import { Lesson } from '../../db/entities/lesson/lesson.entity';
 import { EmailTemplates, UserRoles } from '../../constants';
-import { HttpException, HttpStatus } from '@nestjs/common';
 import { CourseFeedback } from '../../db/entities/course-feedback/course-feedback.entity';
 import { Homework } from '../../db/entities/homework/homework.entity';
 import { StorageService } from '../storage/storage.service';
-import { DataSource } from 'typeorm';
+import { StudentMark } from '../../db/entities/student-mark/student-mark.entity';
 
 const mockRepository = () => ({
   find: jest.fn(),
@@ -32,9 +34,26 @@ const mockedConfigService = {
 const mockedMailService = {
   sendMail: jest.fn(() => Promise.resolve()),
 };
+const mockedStorageService = {
+  get: jest.fn(() => Promise.resolve()),
+  save: jest.fn(() => Promise.resolve()),
+};
+const mockedQueryRunnerManager = {
+  save: jest.fn(() => Promise.resolve()),
+};
+const mockedQueryRunner = {
+  connect: jest.fn(() => Promise.resolve()),
+  startTransaction: jest.fn(() => Promise.resolve()),
+  commitTransaction: jest.fn(() => Promise.resolve()),
+  rollbackTransaction: jest.fn(() => Promise.resolve()),
+  release: jest.fn(() => Promise.resolve()),
+  manager: mockedQueryRunnerManager,
+};
+
 const studentIdMock = 'student-id';
 const courseIdMock = 'course-id';
 const lessonIdMock = 'lesson-id';
+const homeworkIdMock = 'homework-id';
 const hashMock = 'hash';
 const createStudentDataMock = {
   first_name: 'New Admin',
@@ -105,21 +124,24 @@ const studentLessonDataMock = {
   highest_mark: 100,
   created_at: '2022-07-16T10:46:47.567Z',
   updated_at: '2022-07-16T10:46:47.567Z',
-  marks: [
-    {
-      id: 'bce91c8d-0a2d-44e2-9725-2a354355873b',
-      mark: 90,
-      created_at: '2022-07-16T11:02:34.981Z',
-      updated_at: '2022-07-16T11:02:34.981Z',
-    },
-  ],
-  homeworks: [
-    {
-      id: 'd5730b8c-cb47-4b59-b9b4-bd3b927f9a93',
-      created_at: '2022-07-22T13:34:20.461Z',
-      updated_at: '2022-07-22T13:34:20.461Z',
-    },
-  ],
+};
+const markDataMock = {
+  id: 'bce91c8d-0a2d-44e2-9725-2a354355873b',
+  mark: 90,
+  created_at: '2022-07-16T11:02:34.981Z',
+  updated_at: '2022-07-16T11:02:34.981Z',
+};
+const homeworkDataMock = {
+  id: homeworkIdMock,
+  created_at: '2022-07-22T13:34:20.461Z',
+  updated_at: '2022-07-22T13:34:20.461Z',
+};
+const courseDataMock = {
+  id: courseIdMock,
+  final_mark: 67,
+  is_course_pass: true,
+  created_at: '2022-07-16T10:57:00.297Z',
+  updated_at: '2022-07-16T10:57:00.297Z',
 };
 
 describe('StudentsService', () => {
@@ -128,6 +150,8 @@ describe('StudentsService', () => {
   let studentCourseRepository;
   let lessonRepository;
   let courseFeedbackRepository;
+  let homeworkRepository;
+  let studentMarkRepository;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -154,6 +178,10 @@ describe('StudentsService', () => {
           useFactory: mockRepository,
         },
         {
+          provide: getRepositoryToken(StudentMark),
+          useFactory: mockRepository,
+        },
+        {
           provide: AuthService,
           useValue: mockedAuthService,
         },
@@ -167,11 +195,11 @@ describe('StudentsService', () => {
         },
         {
           provide: StorageService,
-          useValue: {},
+          useValue: mockedStorageService,
         },
         {
           provide: DataSource,
-          useValue: {},
+          useValue: { createQueryRunner: () => mockedQueryRunner },
         },
       ],
     }).compile();
@@ -181,6 +209,8 @@ describe('StudentsService', () => {
     studentCourseRepository = module.get(getRepositoryToken(StudentCourse));
     lessonRepository = module.get(getRepositoryToken(Lesson));
     courseFeedbackRepository = module.get(getRepositoryToken(CourseFeedback));
+    homeworkRepository = module.get(getRepositoryToken(Homework));
+    studentMarkRepository = module.get(getRepositoryToken(StudentMark));
   });
 
   afterEach(() => jest.clearAllMocks());
@@ -488,7 +518,6 @@ describe('StudentsService', () => {
 
   describe('getStudentCourseLessons', () => {
     it('should get student course lessons', async () => {
-      studentCourseRepository.findOne.mockResolvedValue(courseDataDBMock);
       lessonRepository.find.mockResolvedValue([lessonDataMock]);
 
       const result = await studentsService.getStudentCourseLessons(
@@ -496,35 +525,109 @@ describe('StudentsService', () => {
         courseIdMock,
       );
 
-      expect(studentCourseRepository.findOne).toHaveBeenCalledWith({
-        where: {
-          student: { id: studentIdMock },
-          course: { id: courseIdMock },
-        },
-      });
       expect(lessonRepository.find).toHaveBeenCalledWith({
-        where: { course: { id: courseIdMock } },
+        where: {
+          course: {
+            id: courseIdMock,
+            studentCourses: { student: { id: studentIdMock } },
+          },
+        },
       });
       expect(result).toEqual([lessonDataMock]);
     });
+  });
 
-    it('should throw an error', async () => {
-      studentCourseRepository.findOne.mockResolvedValue(null);
+  describe('getCourseFeedbacks', () => {
+    it('should get student course feedbacks', async () => {
+      courseFeedbackRepository.find.mockResolvedValue([
+        courseFeedbackDataDBMock,
+      ]);
 
-      await expect(
-        studentsService.getStudentCourseLessons(studentIdMock, courseIdMock),
-      ).rejects.toThrow(notFoundError);
+      const result = await studentsService.getCourseFeedbacks(
+        studentIdMock,
+        courseIdMock,
+      );
+
+      expect(courseFeedbackRepository.find).toHaveBeenCalledWith({
+        where: {
+          student: { id: studentIdMock },
+          course: {
+            id: courseIdMock,
+            studentCourses: { student: { id: studentIdMock } },
+          },
+        },
+      });
+      expect(result).toEqual([courseFeedbackDataDBMock]);
     });
   });
 
-  describe('getCourseFeedback', () => {
-    it('should get student course feedback', async () => {
-      studentCourseRepository.findOne.mockResolvedValue(courseDataDBMock);
-      courseFeedbackRepository.findOne.mockResolvedValue(
-        courseFeedbackDataDBMock,
+  describe('getLessonData', () => {
+    it('should get student lesson data', async () => {
+      lessonRepository.findOne.mockResolvedValue(studentLessonDataMock);
+      homeworkRepository.findOne.mockResolvedValue(homeworkDataMock);
+      studentMarkRepository.findOne.mockResolvedValue(markDataMock);
+
+      const result = await studentsService.getLessonData(
+        studentIdMock,
+        courseIdMock,
+        lessonIdMock,
       );
 
-      const result = await studentsService.getCourseFeedback(
+      expect(lessonRepository.findOne).toHaveBeenCalledWith({
+        where: {
+          id: lessonIdMock,
+          course: {
+            id: courseIdMock,
+            studentCourses: { student: { id: studentIdMock } },
+          },
+        },
+      });
+      expect(homeworkRepository.findOne).toHaveBeenCalledWith({
+        where: {
+          student: { id: studentIdMock },
+          lesson: { id: lessonIdMock },
+        },
+        select: {
+          id: true,
+          created_at: true,
+          updated_at: true,
+        },
+      });
+      expect(studentMarkRepository.findOne).toHaveBeenCalledWith({
+        where: {
+          student: { id: studentIdMock },
+          lesson: { id: lessonIdMock },
+        },
+      });
+      expect(result).toEqual({
+        ...studentLessonDataMock,
+        homework: homeworkDataMock,
+        mark: markDataMock,
+      });
+    });
+
+    it('should throw an error if lesson data is not found', async () => {
+      lessonRepository.findOne.mockResolvedValue(null);
+
+      await expect(
+        studentsService.getLessonData(
+          studentIdMock,
+          courseIdMock,
+          lessonIdMock,
+        ),
+      ).rejects.toThrow(
+        new HttpException('Data not found', HttpStatus.NOT_FOUND),
+      );
+      expect(homeworkRepository.findOne).not.toHaveBeenCalled();
+      expect(studentMarkRepository.findOne).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getStudentCourseData', () => {
+    it('should get student course data', async () => {
+      studentCourseRepository.findOne.mockResolvedValue(courseDataMock);
+
+      const result = await studentsService.getStudentCourseData(
         studentIdMock,
         courseIdMock,
       );
@@ -535,56 +638,225 @@ describe('StudentsService', () => {
           course: { id: courseIdMock },
         },
       });
-      expect(courseFeedbackRepository.findOne).toHaveBeenCalledWith({
+      expect(result).toEqual(courseDataMock);
+    });
+
+    it('should throw an error if course data is not found', async () => {
+      studentCourseRepository.findOne.mockResolvedValue(null);
+
+      await expect(
+        studentsService.getStudentCourseData(studentIdMock, courseIdMock),
+      ).rejects.toThrow(
+        new HttpException('Data not found', HttpStatus.NOT_FOUND),
+      );
+    });
+  });
+
+  describe('getHomeworkFile', () => {
+    it('should get homework file', async () => {
+      const homeworkDataWithFilePathMock = {
+        ...homeworkDataMock,
+        file_path: 'file_path',
+      };
+
+      homeworkRepository.findOne.mockResolvedValue(
+        homeworkDataWithFilePathMock,
+      );
+
+      const getFileSpy = jest.spyOn(mockedStorageService, 'get');
+
+      await studentsService.getHomeworkFile(studentIdMock, homeworkIdMock);
+
+      expect(homeworkRepository.findOne).toHaveBeenCalledWith({
         where: {
-          course: { id: courseIdMock },
+          id: homeworkIdMock,
           student: { id: studentIdMock },
         },
       });
-      expect(result).toEqual(courseFeedbackDataDBMock);
+      expect(getFileSpy).toHaveBeenCalledWith(
+        homeworkDataWithFilePathMock.file_path,
+      );
+    });
+
+    it('should throw an error if homework file is not found', async () => {
+      homeworkRepository.findOne.mockResolvedValue(null);
+
+      await expect(
+        studentsService.getHomeworkFile(studentIdMock, homeworkIdMock),
+      ).rejects.toThrow(
+        new HttpException('Data not found', HttpStatus.NOT_FOUND),
+      );
+    });
+  });
+
+  describe('uploadHomeworkFile', () => {
+    const buffer = Buffer.from('file content');
+    const mockReadableStream = Readable.from(buffer);
+    const fileMock = {
+      buffer: buffer,
+      fieldname: 'fieldname',
+      originalname: 'original-filename',
+      encoding: '7bit',
+      mimetype: 'file-mimetype',
+      destination: 'destination-path',
+      filename: 'file-name',
+      path: 'file-path',
+      size: 955578,
+      stream: mockReadableStream,
+    };
+
+    it('should upload homework file', async () => {
+      studentCourseRepository.findOne.mockResolvedValue(courseDataMock);
+
+      const queryRunnerConnectSpy = jest.spyOn(mockedQueryRunner, 'connect');
+      const queryRunnerStartTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'startTransaction',
+      );
+      const queryRunnerManagerSaveSpy = jest.spyOn(
+        mockedQueryRunnerManager,
+        'save',
+      );
+      const saveFileSpy = jest.spyOn(mockedStorageService, 'save');
+      const queryRunnerCommitTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'commitTransaction',
+      );
+      const queryRunnerRollbackTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'rollbackTransaction',
+      );
+      const queryRunnerReleaseSpy = jest.spyOn(mockedQueryRunner, 'release');
+
+      await studentsService.uploadHomeworkFile(
+        studentIdMock,
+        courseIdMock,
+        lessonIdMock,
+        fileMock,
+      );
+
+      expect(studentCourseRepository.findOne).toHaveBeenCalledWith({
+        where: {
+          student: { id: studentIdMock },
+          course: {
+            id: courseIdMock,
+            lessons: { id: lessonIdMock },
+          },
+        },
+      });
+      expect(queryRunnerConnectSpy).toHaveBeenCalled();
+      expect(queryRunnerStartTransactionSpy).toHaveBeenCalled();
+      expect(queryRunnerManagerSaveSpy).toHaveBeenCalled();
+      expect(saveFileSpy).toHaveBeenCalled();
+      expect(queryRunnerCommitTransactionSpy).toHaveBeenCalled();
+      expect(queryRunnerRollbackTransactionSpy).not.toHaveBeenCalled();
+      expect(queryRunnerReleaseSpy).toHaveBeenCalled();
     });
 
     it('should throw an error if course is not found', async () => {
       studentCourseRepository.findOne.mockResolvedValue(null);
 
+      const queryRunnerConnectSpy = jest.spyOn(mockedQueryRunner, 'connect');
+      const queryRunnerStartTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'startTransaction',
+      );
+      const queryRunnerManagerSaveSpy = jest.spyOn(
+        mockedQueryRunnerManager,
+        'save',
+      );
+      const saveFileSpy = jest.spyOn(mockedStorageService, 'save');
+      const queryRunnerCommitTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'commitTransaction',
+      );
+      const queryRunnerRollbackTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'rollbackTransaction',
+      );
+      const queryRunnerReleaseSpy = jest.spyOn(mockedQueryRunner, 'release');
+
       await expect(
-        studentsService.getCourseFeedback(studentIdMock, courseIdMock),
+        studentsService.uploadHomeworkFile(
+          studentIdMock,
+          courseIdMock,
+          lessonIdMock,
+          fileMock,
+        ),
       ).rejects.toThrow(
-        new HttpException('Course not found', HttpStatus.NOT_FOUND),
+        new HttpException('Data not found', HttpStatus.NOT_FOUND),
       );
-    });
-  });
-
-  describe('getLessonData', () => {
-    it('should get student lesson data', async () => {
-      lessonRepository.findOne.mockResolvedValue(studentLessonDataMock);
-
-      const result = await studentsService.getLessonData(
-        studentIdMock,
-        lessonIdMock,
-        lessonIdMock,
-      );
-
-      expect(lessonRepository.findOne).toHaveBeenCalledWith({
+      expect(studentCourseRepository.findOne).toHaveBeenCalledWith({
         where: {
-          id: lessonIdMock,
-          course: { id: lessonIdMock },
-          marks: { student: { id: studentIdMock } },
-          homeworks: { student: { id: studentIdMock } },
-        },
-        relations: {
-          marks: true,
-          homeworks: true,
-        },
-        select: {
-          homeworks: {
-            id: true,
-            created_at: true,
-            updated_at: true,
+          student: { id: studentIdMock },
+          course: {
+            id: courseIdMock,
+            lessons: { id: lessonIdMock },
           },
         },
       });
-      expect(result).toEqual(studentLessonDataMock);
+      expect(queryRunnerConnectSpy).not.toHaveBeenCalled();
+      expect(queryRunnerStartTransactionSpy).not.toHaveBeenCalled();
+      expect(queryRunnerManagerSaveSpy).not.toHaveBeenCalled();
+      expect(saveFileSpy).not.toHaveBeenCalled();
+      expect(queryRunnerCommitTransactionSpy).not.toHaveBeenCalled();
+      expect(queryRunnerRollbackTransactionSpy).not.toHaveBeenCalled();
+      expect(queryRunnerReleaseSpy).not.toHaveBeenCalled();
+    });
+
+    it('should throw an error if file has already been uploaded', async () => {
+      studentCourseRepository.findOne.mockResolvedValue(courseDataMock);
+
+      const queryRunnerConnectSpy = jest.spyOn(mockedQueryRunner, 'connect');
+      const queryRunnerStartTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'startTransaction',
+      );
+      const queryRunnerManagerSaveSpy = jest
+        .spyOn(mockedQueryRunnerManager, 'save')
+        .mockRejectedValue({ code: '23505' });
+      const saveFileSpy = jest.spyOn(mockedStorageService, 'save');
+      const queryRunnerCommitTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'commitTransaction',
+      );
+      const queryRunnerRollbackTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'rollbackTransaction',
+      );
+      const queryRunnerReleaseSpy = jest.spyOn(mockedQueryRunner, 'release');
+
+      try {
+        await studentsService.uploadHomeworkFile(
+          studentIdMock,
+          courseIdMock,
+          lessonIdMock,
+          fileMock,
+        );
+      } catch (err) {
+        expect(studentCourseRepository.findOne).toHaveBeenCalledWith({
+          where: {
+            student: { id: studentIdMock },
+            course: {
+              id: courseIdMock,
+              lessons: { id: lessonIdMock },
+            },
+          },
+        });
+        expect(queryRunnerConnectSpy).toHaveBeenCalled();
+        expect(queryRunnerStartTransactionSpy).toHaveBeenCalled();
+        expect(queryRunnerManagerSaveSpy).toHaveBeenCalled();
+        expect(saveFileSpy).not.toHaveBeenCalled();
+        expect(queryRunnerCommitTransactionSpy).not.toHaveBeenCalled();
+        expect(queryRunnerRollbackTransactionSpy).toHaveBeenCalled();
+        expect(queryRunnerReleaseSpy).toHaveBeenCalled();
+        expect(err).toEqual(
+          new HttpException(
+            'You have already uploaded the homework for this lesson',
+            HttpStatus.BAD_REQUEST,
+          ),
+        );
+      }
     });
   });
 });
