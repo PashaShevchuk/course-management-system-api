@@ -574,7 +574,7 @@ describe('InstructorsService', () => {
           createFeedbackDataMock,
         ),
       ).rejects.toThrow(
-        new HttpException('Course not found', HttpStatus.NOT_FOUND),
+        new HttpException('Data not found', HttpStatus.NOT_FOUND),
       );
     });
 
@@ -650,8 +650,9 @@ describe('InstructorsService', () => {
 
   describe('getCourseFeedbacks', () => {
     it('should get instructor course feedbacks', async () => {
-      instructorCourseRepository.findOne.mockResolvedValue(courseDataDBMock);
-      courseFeedbackRepository.find.mockResolvedValue(courseFeedbackDataDBMock);
+      instructorCourseRepository.findOne.mockResolvedValue({
+        course: { courseFeedbacks: [courseFeedbackDataDBMock] },
+      });
 
       const result = await instructorsService.getCourseFeedbacks(
         instructorIdMock,
@@ -660,17 +661,19 @@ describe('InstructorsService', () => {
 
       expect(instructorCourseRepository.findOne).toHaveBeenCalledWith({
         where: {
+          course: {
+            id: courseIdMock,
+            courseFeedbacks: {
+              instructor: { id: instructorIdMock },
+            },
+          },
           instructor: { id: instructorIdMock },
-          course: { id: courseIdMock },
+        },
+        relations: {
+          course: { courseFeedbacks: true },
         },
       });
-      expect(courseFeedbackRepository.find).toHaveBeenCalledWith({
-        where: {
-          course: { id: courseIdMock },
-          instructor: { id: instructorIdMock },
-        },
-      });
-      expect(result).toEqual(courseFeedbackDataDBMock);
+      expect(result).toEqual([courseFeedbackDataDBMock]);
     });
 
     it('should throw an error if course is not found', async () => {
@@ -679,7 +682,7 @@ describe('InstructorsService', () => {
       await expect(
         instructorsService.getCourseFeedbacks(instructorIdMock, courseIdMock),
       ).rejects.toThrow(
-        new HttpException('Course not found', HttpStatus.NOT_FOUND),
+        new HttpException('Data not found', HttpStatus.NOT_FOUND),
       );
     });
   });

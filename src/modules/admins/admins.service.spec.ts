@@ -28,7 +28,28 @@ const mockedConfigService = {
 const mockedMailService = {
   sendMail: jest.fn(() => Promise.resolve()),
 };
+const mockedStorageService = {
+  get: jest.fn(() => Promise.resolve()),
+  save: jest.fn(() => Promise.resolve()),
+  delete: jest.fn(() => Promise.resolve()),
+};
+const mockedQueryRunnerManager = {
+  save: jest.fn(() => Promise.resolve()),
+  delete: jest.fn(() => Promise.resolve()),
+};
+const mockedQueryRunner = {
+  connect: jest.fn(() => Promise.resolve()),
+  startTransaction: jest.fn(() => Promise.resolve()),
+  commitTransaction: jest.fn(() => Promise.resolve()),
+  rollbackTransaction: jest.fn(() => Promise.resolve()),
+  release: jest.fn(() => Promise.resolve()),
+  manager: mockedQueryRunnerManager,
+};
+
+const idMock = 'id';
 const adminIdMock = 'admin-id';
+const studentIdMock = 'student-id';
+const lessonIdMock = 'lesson-id';
 const hashMock = 'hash';
 const createAdminDataMock = {
   first_name: 'New Admin',
@@ -62,6 +83,7 @@ const notFoundError = new HttpException('Data not found', HttpStatus.NOT_FOUND);
 describe('AdminsService', () => {
   let adminService: AdminsService;
   let adminRepository;
+  let homeworkRepository;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -77,11 +99,11 @@ describe('AdminsService', () => {
         },
         {
           provide: StorageService,
-          useValue: {},
+          useValue: mockedStorageService,
         },
         {
           provide: DataSource,
-          useValue: {},
+          useValue: { createQueryRunner: () => mockedQueryRunner },
         },
         {
           provide: AuthService,
@@ -100,6 +122,7 @@ describe('AdminsService', () => {
 
     adminService = module.get(AdminsService);
     adminRepository = module.get(getRepositoryToken(Admin));
+    homeworkRepository = module.get(getRepositoryToken(Homework));
   });
 
   afterEach(() => jest.clearAllMocks());
@@ -310,6 +333,148 @@ describe('AdminsService', () => {
       await expect(adminService.deleteAdminById(adminIdMock)).rejects.toThrow(
         notFoundError,
       );
+    });
+  });
+
+  describe('getHomeworks', () => {
+    it('should get homeworks data', async () => {
+      const homeworkDataMock = {
+        id: idMock,
+        created_at: '2022-07-22T13:34:20.461Z',
+        updated_at: '2022-07-22T13:34:20.461Z',
+        student: {
+          id: studentIdMock,
+          first_name: 'John',
+          last_name: 'Doe',
+          email: 'john@email.com',
+        },
+        lesson: {
+          id: lessonIdMock,
+          title: 'Data types',
+        },
+      };
+
+      homeworkRepository.find.mockResolvedValue([homeworkDataMock]);
+
+      const result = await adminService.getHomeworks();
+
+      expect(homeworkRepository.find).toHaveBeenCalled();
+      expect(result).toEqual([homeworkDataMock]);
+    });
+  });
+
+  describe('getHomeworkFile', () => {
+    it('should get a homework file', async () => {
+      const homeworkDataMock = {
+        id: idMock,
+        created_at: '2022-07-22T13:34:20.461Z',
+        updated_at: '2022-07-22T13:34:20.461Z',
+        file_path: 'file_path',
+      };
+
+      homeworkRepository.findOne.mockResolvedValue(homeworkDataMock);
+
+      const getFileSpy = jest.spyOn(mockedStorageService, 'get');
+
+      await adminService.getHomeworkFile(idMock);
+
+      expect(homeworkRepository.findOne).toHaveBeenCalledWith({
+        where: { id: idMock },
+      });
+      expect(getFileSpy).toHaveBeenCalledWith(homeworkDataMock.file_path);
+    });
+
+    it('should throw an error if homework file is not found', async () => {
+      homeworkRepository.findOne.mockResolvedValue(null);
+
+      await expect(adminService.getHomeworkFile(idMock)).rejects.toThrow(
+        new HttpException('Data not found', HttpStatus.NOT_FOUND),
+      );
+    });
+  });
+
+  describe('deleteHomeworkFile', () => {
+    it('should delete a homework file', async () => {
+      const homeworkDataMock = {
+        id: idMock,
+        created_at: '2022-07-22T13:34:20.461Z',
+        updated_at: '2022-07-22T13:34:20.461Z',
+        file_path: 'file_path',
+      };
+
+      homeworkRepository.findOne.mockResolvedValue(homeworkDataMock);
+
+      const queryRunnerConnectSpy = jest.spyOn(mockedQueryRunner, 'connect');
+      const queryRunnerStartTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'startTransaction',
+      );
+      const queryRunnerManagerDeleteSpy = jest.spyOn(
+        mockedQueryRunnerManager,
+        'delete',
+      );
+      const deleteFileSpy = jest.spyOn(mockedStorageService, 'delete');
+      const queryRunnerCommitTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'commitTransaction',
+      );
+      const queryRunnerRollbackTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'rollbackTransaction',
+      );
+      const queryRunnerReleaseSpy = jest.spyOn(mockedQueryRunner, 'release');
+
+      await adminService.deleteHomeworkFile(idMock);
+
+      expect(homeworkRepository.findOne).toHaveBeenCalledWith({
+        where: { id: idMock },
+      });
+      expect(queryRunnerConnectSpy).toHaveBeenCalled();
+      expect(queryRunnerStartTransactionSpy).toHaveBeenCalled();
+      expect(queryRunnerManagerDeleteSpy).toHaveBeenCalled();
+      expect(deleteFileSpy).toHaveBeenCalled();
+      expect(queryRunnerCommitTransactionSpy).toHaveBeenCalled();
+      expect(queryRunnerRollbackTransactionSpy).not.toHaveBeenCalled();
+      expect(queryRunnerReleaseSpy).toHaveBeenCalled();
+    });
+
+    it('should throw an error if data is not found', async () => {
+      homeworkRepository.findOne.mockResolvedValue(null);
+
+      const queryRunnerConnectSpy = jest.spyOn(mockedQueryRunner, 'connect');
+      const queryRunnerStartTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'startTransaction',
+      );
+      const queryRunnerManagerDeleteSpy = jest.spyOn(
+        mockedQueryRunnerManager,
+        'delete',
+      );
+      const deleteFileSpy = jest.spyOn(mockedStorageService, 'delete');
+      const queryRunnerCommitTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'commitTransaction',
+      );
+      const queryRunnerRollbackTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'rollbackTransaction',
+      );
+      const queryRunnerReleaseSpy = jest.spyOn(mockedQueryRunner, 'release');
+
+      await expect(adminService.deleteHomeworkFile(idMock)).rejects.toThrow(
+        new HttpException('Data not found', HttpStatus.NOT_FOUND),
+      );
+
+      expect(homeworkRepository.findOne).toHaveBeenCalledWith({
+        where: { id: idMock },
+      });
+      expect(queryRunnerConnectSpy).not.toHaveBeenCalled();
+      expect(queryRunnerStartTransactionSpy).not.toHaveBeenCalled();
+      expect(queryRunnerManagerDeleteSpy).not.toHaveBeenCalled();
+      expect(deleteFileSpy).not.toHaveBeenCalled();
+      expect(queryRunnerCommitTransactionSpy).not.toHaveBeenCalled();
+      expect(queryRunnerRollbackTransactionSpy).not.toHaveBeenCalled();
+      expect(queryRunnerReleaseSpy).not.toHaveBeenCalled();
     });
   });
 });

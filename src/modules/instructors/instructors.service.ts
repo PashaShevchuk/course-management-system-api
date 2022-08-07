@@ -243,8 +243,11 @@ export class InstructorsService {
     return courses;
   }
 
-  async getInstructorCourseLessons(instructorId: string, courseId: string) {
-    this.logger.log(`${this.LOGGER_PREFIX} get instructor course lessons`);
+  async getInstructorCourse(
+    instructorId: string,
+    courseId: string,
+  ): Promise<InstructorCourse> {
+    this.logger.log(`${this.LOGGER_PREFIX} get instructor course`);
 
     const instructorCourse = await this.instructorCourseRepository.findOne({
       where: {
@@ -257,6 +260,13 @@ export class InstructorsService {
       throw new HttpException('Data not found', HttpStatus.NOT_FOUND);
     }
 
+    return instructorCourse;
+  }
+
+  async getInstructorCourseLessons(instructorId: string, courseId: string) {
+    this.logger.log(`${this.LOGGER_PREFIX} get instructor course lessons`);
+
+    await this.getInstructorCourse(instructorId, courseId);
     const lessons = await this.lessonRepository.find({
       where: { course: { id: courseId } },
     });
@@ -268,17 +278,9 @@ export class InstructorsService {
     instructorId: string,
     courseId: string,
   ): Promise<Student[]> {
-    const instructorCourse = await this.instructorCourseRepository.findOne({
-      where: {
-        instructor: { id: instructorId },
-        course: { id: courseId },
-      },
-    });
+    this.logger.log(`${this.LOGGER_PREFIX} get instructor course students`);
 
-    if (!instructorCourse) {
-      throw new HttpException('Data not found', HttpStatus.NOT_FOUND);
-    }
-
+    await this.getInstructorCourse(instructorId, courseId);
     const studentCourses = await this.studentCourseRepository.find({
       where: { course: { id: courseId } },
       relations: { student: true },
@@ -294,17 +296,7 @@ export class InstructorsService {
   ) {
     this.logger.log(`${this.LOGGER_PREFIX} create course feedback`);
 
-    const instructorCourse = await this.instructorCourseRepository.findOne({
-      where: {
-        instructor: { id: instructorId },
-        course: { id: courseId },
-      },
-    });
-
-    if (!instructorCourse) {
-      throw new HttpException('Course not found', HttpStatus.NOT_FOUND);
-    }
-
+    await this.getInstructorCourse(instructorId, courseId);
     const studentCourse = await this.studentCourseRepository.findOne({
       where: {
         course: { id: courseId },
@@ -339,28 +331,29 @@ export class InstructorsService {
   async getCourseFeedbacks(
     instructorId: string,
     courseId: string,
-  ): Promise<CourseFeedback[]> {
+  ): Promise<any> {
     this.logger.log(`${this.LOGGER_PREFIX} get instructor course feedbacks`);
 
     const instructorCourse = await this.instructorCourseRepository.findOne({
       where: {
+        course: {
+          id: courseId,
+          courseFeedbacks: {
+            instructor: { id: instructorId },
+          },
+        },
         instructor: { id: instructorId },
-        course: { id: courseId },
+      },
+      relations: {
+        course: { courseFeedbacks: true },
       },
     });
 
     if (!instructorCourse) {
-      throw new HttpException('Course not found', HttpStatus.NOT_FOUND);
+      throw new HttpException('Data not found', HttpStatus.NOT_FOUND);
     }
 
-    const courseFeedbacks = await this.courseFeedbackRepository.find({
-      where: {
-        course: { id: courseId },
-        instructor: { id: instructorId },
-      },
-    });
-
-    return courseFeedbacks;
+    return instructorCourse.course.courseFeedbacks;
   }
 
   async updateCourseFeedback(
@@ -543,17 +536,7 @@ export class InstructorsService {
   async putFinalMarksForStudents(instructorId: string, courseId: string) {
     this.logger.log(`${this.LOGGER_PREFIX} put final marks for students`);
 
-    const instructorCourse = await this.instructorCourseRepository.findOne({
-      where: {
-        instructor: { id: instructorId },
-        course: { id: courseId },
-      },
-    });
-
-    if (!instructorCourse) {
-      throw new HttpException('Course not found', HttpStatus.NOT_FOUND);
-    }
-
+    await this.getInstructorCourse(instructorId, courseId);
     const studentFinalMarks = await this.lessonRepository.query(
       `
           SELECT sm."studentId", ROUND(AVG(sm.mark)) as final_mark
@@ -610,23 +593,17 @@ export class InstructorsService {
   ) {
     this.logger.log(`${this.LOGGER_PREFIX} put final mark for student`);
 
-    const instructorCourse = await this.instructorCourseRepository.findOne({
-      where: {
-        instructor: { id: instructorId },
-        course: { id: putFinalMarkForStudentDto.course_id },
-      },
-    });
-
-    if (!instructorCourse) {
-      throw new HttpException('Course not found', HttpStatus.NOT_FOUND);
-    }
-
+    await this.getInstructorCourse(
+      instructorId,
+      putFinalMarkForStudentDto.course_id,
+    );
     const [studentFinalMark] = await this.lessonRepository.query(
       `
           SELECT sm."studentId", ROUND(AVG(sm.mark)) as final_mark
           FROM lesson
                    INNER JOIN student_mark sm on lesson.id = sm."lessonId"
-          WHERE "courseId" = $1 AND "studentId" = $2
+          WHERE "courseId" = $1
+            AND "studentId" = $2
           GROUP BY sm."studentId";
       `,
       [
@@ -656,17 +633,7 @@ export class InstructorsService {
   ): Promise<typeof courseStudentsDataExampleDto[]> {
     this.logger.log(`${this.LOGGER_PREFIX} get course students data`);
 
-    const instructorCourse = await this.instructorCourseRepository.findOne({
-      where: {
-        instructor: { id: instructorId },
-        course: { id: courseId },
-      },
-    });
-
-    if (!instructorCourse) {
-      throw new HttpException('Course not found', HttpStatus.NOT_FOUND);
-    }
-
+    await this.getInstructorCourse(instructorId, courseId);
     const result = await this.studentCourseRepository.find({
       where: {
         course: { id: courseId },
@@ -690,17 +657,7 @@ export class InstructorsService {
   async putPassCourseForStudents(instructorId: string, courseId: string) {
     this.logger.log(`${this.LOGGER_PREFIX} put pass course for students`);
 
-    const instructorCourse = await this.instructorCourseRepository.findOne({
-      where: {
-        instructor: { id: instructorId },
-        course: { id: courseId },
-      },
-    });
-
-    if (!instructorCourse) {
-      throw new HttpException('Course not found', HttpStatus.NOT_FOUND);
-    }
-
+    await this.getInstructorCourse(instructorId, courseId);
     const studentMarksData = await this.lessonRepository.query(
       `
           SELECT sm."studentId", SUM(l.highest_mark) as highest_mark_sum, SUM(sm.mark) as mark_sum
@@ -759,17 +716,10 @@ export class InstructorsService {
   ) {
     this.logger.log(`${this.LOGGER_PREFIX} put pass course for a student`);
 
-    const instructorCourse = await this.instructorCourseRepository.findOne({
-      where: {
-        instructor: { id: instructorId },
-        course: { id: putPassCourseForStudentDto.course_id },
-      },
-    });
-
-    if (!instructorCourse) {
-      throw new HttpException('Course not found', HttpStatus.NOT_FOUND);
-    }
-
+    await this.getInstructorCourse(
+      instructorId,
+      putPassCourseForStudentDto.course_id,
+    );
     const [studentMarkData] = await this.lessonRepository.query(
       `
           SELECT sm."studentId", SUM(l.highest_mark) as highest_mark_sum, SUM(sm.mark) as mark_sum
@@ -810,17 +760,7 @@ export class InstructorsService {
   ): Promise<StorageFile> {
     this.logger.log(`${this.LOGGER_PREFIX} get course lesson homework file`);
 
-    const instructorCourse = await this.instructorCourseRepository.findOne({
-      where: {
-        instructor: { id: instructorId },
-        course: { id: getHomeworkFileDto.course_id },
-      },
-    });
-
-    if (!instructorCourse) {
-      throw new HttpException('Data not found', HttpStatus.NOT_FOUND);
-    }
-
+    await this.getInstructorCourse(instructorId, getHomeworkFileDto.course_id);
     const homework = await this.homeworkRepository.findOne({
       where: {
         id: getHomeworkFileDto.homework_id,

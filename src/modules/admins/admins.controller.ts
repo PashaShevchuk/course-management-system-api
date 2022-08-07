@@ -84,11 +84,7 @@ export class AdminsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoles.ADMIN)
   @Get('homeworks/:id')
-  async getHomeworkFile(
-    @Req() req,
-    @Res() res,
-    @Param('id') homeworkId: string,
-  ) {
+  async getHomeworkFile(@Res() res, @Param('id') homeworkId: string) {
     this.logger.log(`${this.LOGGER_PREFIX} get homework file`);
 
     const file = await this.adminsService.getHomeworkFile(homeworkId);

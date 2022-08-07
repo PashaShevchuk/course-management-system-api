@@ -1,7 +1,10 @@
-import { AdminsController } from './admins.controller';
-import { AdminsService } from './admins.service';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
+import { Readable } from 'stream';
+import * as httpMocks from 'node-mocks-http';
+import { AdminsController } from './admins.controller';
+import { AdminsService } from './admins.service';
 import { Admin } from '../../db/entities/admin/admin.entity';
 import { CreateAdminDto } from './dto/create-admin.dto';
 import { AuthService } from '../auth/auth.service';
@@ -14,7 +17,6 @@ import { UpdateAdminStatusDto } from './dto/update-admin-status.dto';
 import { UpdateAdminDto } from './dto/update-admin.dto';
 import { Homework } from '../../db/entities/homework/homework.entity';
 import { StorageService } from '../storage/storage.service';
-import { DataSource } from 'typeorm';
 
 const mockRepository = () => ({
   find: jest.fn(),
@@ -22,7 +24,11 @@ const mockRepository = () => ({
   save: jest.fn(),
   delete: jest.fn(),
 });
+
+let resMock;
+
 const adminIdMock = 'admin-id';
+const homeworkIdMock = 'homework-id';
 
 describe('AdminsController', () => {
   let adminsController: AdminsController;
@@ -67,6 +73,8 @@ describe('AdminsController', () => {
         },
       ],
     }).compile();
+
+    resMock = httpMocks.createResponse();
 
     adminsService = module.get(AdminsService);
     adminsController = module.get(AdminsController);
@@ -175,6 +183,51 @@ describe('AdminsController', () => {
       await adminsController.delete(adminIdMock);
 
       expect(adminsService.deleteAdminById).toBeCalledWith(adminIdMock);
+    });
+  });
+
+  describe('getHomeworks', () => {
+    it('should get homeworks list', async () => {
+      const result = [new Homework()];
+
+      jest
+        .spyOn(adminsService, 'getHomeworks')
+        .mockImplementation(() => Promise.resolve(result));
+
+      expect(await adminsController.getHomeworks()).toBe(result);
+    });
+  });
+
+  describe('getHomeworkFile', () => {
+    it('should get a homework file', async () => {
+      const buffer = Buffer.from('file content');
+      const mockReadableStream = Readable.from(buffer);
+      const fileMock = {
+        contentType: 'text/html',
+        stream: mockReadableStream,
+      };
+
+      jest
+        .spyOn(adminsService, 'getHomeworkFile')
+        .mockImplementation(() => Promise.resolve(fileMock));
+
+      await adminsController.getHomeworkFile(resMock, homeworkIdMock);
+
+      expect(adminsService.getHomeworkFile).toHaveBeenCalledWith(
+        homeworkIdMock,
+      );
+    });
+  });
+
+  describe('deleteHomeworkFile', () => {
+    it('should delete a homework file', async () => {
+      jest
+        .spyOn(adminsService, 'deleteHomeworkFile')
+        .mockImplementation(() => Promise.resolve());
+
+      await adminsController.deleteHomeworkFile(homeworkIdMock);
+
+      expect(adminsService.deleteHomeworkFile).toBeCalledWith(homeworkIdMock);
     });
   });
 });
