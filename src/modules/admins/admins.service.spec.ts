@@ -476,5 +476,53 @@ describe('AdminsService', () => {
       expect(queryRunnerRollbackTransactionSpy).not.toHaveBeenCalled();
       expect(queryRunnerReleaseSpy).not.toHaveBeenCalled();
     });
+
+    it('should throw an error when deleting a homework file', async () => {
+      const homeworkDataMock = {
+        id: idMock,
+        created_at: '2022-07-22T13:34:20.461Z',
+        updated_at: '2022-07-22T13:34:20.461Z',
+        file_path: 'file_path',
+      };
+
+      homeworkRepository.findOne.mockResolvedValue(homeworkDataMock);
+
+      const queryRunnerConnectSpy = jest.spyOn(mockedQueryRunner, 'connect');
+      const queryRunnerStartTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'startTransaction',
+      );
+      const queryRunnerManagerDeleteSpy = jest.spyOn(
+        mockedQueryRunnerManager,
+        'delete',
+      );
+      const deleteFileSpy = jest
+        .spyOn(mockedStorageService, 'delete')
+        .mockRejectedValue('error');
+      const queryRunnerCommitTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'commitTransaction',
+      );
+      const queryRunnerRollbackTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'rollbackTransaction',
+      );
+      const queryRunnerReleaseSpy = jest.spyOn(mockedQueryRunner, 'release');
+
+      try {
+        await adminService.deleteHomeworkFile(idMock);
+      } catch (err) {
+        expect(homeworkRepository.findOne).toHaveBeenCalledWith({
+          where: { id: idMock },
+        });
+        expect(queryRunnerConnectSpy).toHaveBeenCalled();
+        expect(queryRunnerStartTransactionSpy).toHaveBeenCalled();
+        expect(queryRunnerManagerDeleteSpy).toHaveBeenCalled();
+        expect(deleteFileSpy).toHaveBeenCalled();
+        expect(queryRunnerCommitTransactionSpy).not.toHaveBeenCalled();
+        expect(queryRunnerRollbackTransactionSpy).toHaveBeenCalled();
+        expect(queryRunnerReleaseSpy).toHaveBeenCalled();
+      }
+    });
   });
 });

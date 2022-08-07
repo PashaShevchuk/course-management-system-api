@@ -803,5 +803,60 @@ describe('StudentsService', () => {
       expect(queryRunnerRollbackTransactionSpy).not.toHaveBeenCalled();
       expect(queryRunnerReleaseSpy).not.toHaveBeenCalled();
     });
+
+    it('should throw an error if file has already been uploaded', async () => {
+      studentCourseRepository.findOne.mockResolvedValue(courseDataMock);
+
+      const queryRunnerConnectSpy = jest.spyOn(mockedQueryRunner, 'connect');
+      const queryRunnerStartTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'startTransaction',
+      );
+      const queryRunnerManagerSaveSpy = jest
+        .spyOn(mockedQueryRunnerManager, 'save')
+        .mockRejectedValue({ code: '23505' });
+      const saveFileSpy = jest.spyOn(mockedStorageService, 'save');
+      const queryRunnerCommitTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'commitTransaction',
+      );
+      const queryRunnerRollbackTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'rollbackTransaction',
+      );
+      const queryRunnerReleaseSpy = jest.spyOn(mockedQueryRunner, 'release');
+
+      try {
+        await studentsService.uploadHomeworkFile(
+          studentIdMock,
+          courseIdMock,
+          lessonIdMock,
+          fileMock,
+        );
+      } catch (err) {
+        expect(studentCourseRepository.findOne).toHaveBeenCalledWith({
+          where: {
+            student: { id: studentIdMock },
+            course: {
+              id: courseIdMock,
+              lessons: { id: lessonIdMock },
+            },
+          },
+        });
+        expect(queryRunnerConnectSpy).toHaveBeenCalled();
+        expect(queryRunnerStartTransactionSpy).toHaveBeenCalled();
+        expect(queryRunnerManagerSaveSpy).toHaveBeenCalled();
+        expect(saveFileSpy).not.toHaveBeenCalled();
+        expect(queryRunnerCommitTransactionSpy).not.toHaveBeenCalled();
+        expect(queryRunnerRollbackTransactionSpy).toHaveBeenCalled();
+        expect(queryRunnerReleaseSpy).toHaveBeenCalled();
+        expect(err).toEqual(
+          new HttpException(
+            'You have already uploaded the homework for this lesson',
+            HttpStatus.BAD_REQUEST,
+          ),
+        );
+      }
+    });
   });
 });
