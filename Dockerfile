@@ -11,8 +11,6 @@ RUN npm ci
 
 COPY . .
 
-RUN npm run test:cov
-
 ARG PORT=3000
 ENV PORT=$PORT
 EXPOSE $PORT
