@@ -11,7 +11,7 @@ spec:
       app: cms-api
   strategy:
     type: Recreate
-  minReadySeconds: 15
+  minReadySeconds: 30
   template:
     metadata:
       labels:
