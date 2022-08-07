@@ -4,7 +4,7 @@ steps:
     entrypoint: npm
     args: [ 'install' ]
   - name: node:16
-    id: 'Run unit tests coverage'
+    id: 'Run unit tests'
     waitFor: [ 'Install dependencies' ]
     entrypoint: npm
     args: [ 'test:cov' ]
