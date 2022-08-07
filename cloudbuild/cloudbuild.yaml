@@ -7,7 +7,7 @@ steps:
     id: 'Run unit tests'
     waitFor: [ 'Install dependencies' ]
     entrypoint: npm
-    args: [ 'test:cov' ]
+    args: [ 'test' ]
   - name: 'gcr.io/cloud-builders/docker'
     waitFor: [ 'Install dependencies', 'Run unit tests' ]
     id: 'Bake Image'
