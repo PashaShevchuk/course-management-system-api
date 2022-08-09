@@ -7,6 +7,8 @@ import {
   Logger,
   UploadedFile,
 } from '@nestjs/common';
+import { Express } from 'express';
+import { Multer } from 'multer'; // eslint-disable-line
 import { v4 } from 'uuid';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
