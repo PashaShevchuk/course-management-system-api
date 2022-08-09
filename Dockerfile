@@ -2,7 +2,7 @@ FROM node:16.15-alpine
 
 WORKDIR /usr/src/app
 
-RUN npm install -g @nestjs/cli typescript
+RUN npm install -g @nestjs/cli
 
 COPY package*.json ./
 
