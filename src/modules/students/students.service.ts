@@ -7,6 +7,7 @@ import {
   Logger,
   UploadedFile,
 } from '@nestjs/common';
+import 'multer';
 import { v4 } from 'uuid';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
@@ -53,7 +54,8 @@ export class StudentsService {
     private readonly mailService: MailService,
     private readonly storageService: StorageService,
     private readonly dataSource: DataSource,
-  ) {}
+  ) {
+  }
 
   async createStudentByAdmin(
     createStudentByAdminDto: CreateStudentByAdminDto,
