@@ -14,7 +14,8 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import 'multer';
+import { Express } from 'express';
+import { Multer } from 'multer'; // eslint-disable-line
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { StudentsService } from './students.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
