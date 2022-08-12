@@ -25,7 +25,7 @@ steps:
       - --image=gcr.io/$PROJECT_ID/cms-api:latest
       - --location=us-central1
       - --cluster=cms-k8s-cluster
-    timeout: 600s
+    timeout: 800s
 options:
   logging: GCS_ONLY
 timeout: 1800s
