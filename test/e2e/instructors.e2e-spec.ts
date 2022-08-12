@@ -11,7 +11,7 @@ const instructorInput = {
   first_name: 'Mary',
   last_name: 'Miles',
   email: 'mary@email.com',
-  password: '123456789',
+  password: 'SomePassword1',
   position: 'Senior instructor',
 };
 
