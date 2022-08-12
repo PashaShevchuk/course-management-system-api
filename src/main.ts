@@ -41,8 +41,8 @@ async function bootstrap() {
   await app.listen(port, async () => {
     console.log(`The server is listening on the port ${port}`);
 
-    await dataSource.initialize();
-    await dataSource.runMigrations();
+    // await dataSource.initialize();
+    // await dataSource.runMigrations();
   });
 }
 
