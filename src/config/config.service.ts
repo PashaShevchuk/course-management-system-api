@@ -4,6 +4,7 @@ import * as redisStore from 'cache-manager-redis-store';
 import { join } from 'path';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
 import { DataSourceOptions } from 'typeorm';
+import * as nodemailerMailgunTransport from 'nodemailer-mailgun-transport';
 
 const REQUIRED_VARS = [
   'POSTGRES_HOST',
@@ -59,13 +60,12 @@ export class ConfigService {
 
   public async getMailConfig() {
     return {
-      transport: {
-        service: this.getValue('MAIL_SERVICE'),
+      transport: nodemailerMailgunTransport({
         auth: {
-          user: this.getValue('MAIL_USER'),
-          pass: this.getValue('MAIL_PASSWORD'),
+          api_key: this.getValue('MAILGUN_API_KEY'),
+          domain: this.getValue('MAILGUN_API_DOMAIN'),
         },
-      },
+      }),
       template: {
         dir: join(process.cwd(), 'dist', 'templates'),
         adapter: new HandlebarsAdapter(),
