@@ -5,14 +5,13 @@ metadata:
   labels:
     app: cms-api
 spec:
-  progressDeadlineSeconds: 1200
   replicas: 1
   selector:
     matchLabels:
       app: cms-api
   strategy:
     type: Recreate
-  minReadySeconds: 90
+  minReadySeconds: 60
   template:
     metadata:
       labels:
@@ -21,7 +20,6 @@ spec:
       containers:
         - name: cms-api
           image: gcr.io/course-management-system-api/cms-api:latest
-          timeoutSeconds: 600
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
@@ -89,21 +87,16 @@ spec:
                 secretKeyRef:
                   name: api-secrets
                   key: IS_EMAIL_ENABLED
-            - name: MAIL_USER
+            - name: MAILGUN_API_KEY
               valueFrom:
                 secretKeyRef:
                   name: api-secrets
-                  key: MAIL_USER
-            - name: MAIL_PASSWORD
+                  key: MAILGUN_API_KEY
+            - name: MAILGUN_API_DOMAIN
               valueFrom:
                 secretKeyRef:
                   name: api-secrets
-                  key: MAIL_PASSWORD
-            - name: MAIL_SERVICE
-              valueFrom:
-                secretKeyRef:
-                  name: api-secrets
-                  key: MAIL_SERVICE
+                  key: MAILGUN_API_DOMAIN
             - name: PROJECT_ID
               valueFrom:
                 configMapKeyRef:
