@@ -20,6 +20,13 @@ spec:
       containers:
         - name: cms-api
           image: gcr.io/course-management-system-api/cms-api:latest
+          resources:
+            requests:
+              cpu: "2000m"
+              memory: "2Gi"
+            limits:
+              memory: "4Gi"
+              cpu: "2000m"
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
