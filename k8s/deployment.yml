@@ -5,6 +5,7 @@ metadata:
   labels:
     app: cms-api
 spec:
+  progressDeadlineSeconds: 1200
   replicas: 1
   selector:
     matchLabels:
@@ -20,6 +21,7 @@ spec:
       containers:
         - name: cms-api
           image: gcr.io/course-management-system-api/cms-api:latest
+          timeoutSeconds: 600
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
