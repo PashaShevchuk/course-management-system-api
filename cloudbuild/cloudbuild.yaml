@@ -17,6 +17,7 @@ steps:
     waitFor: [ 'Install dependencies', 'Run unit tests', 'Bake Image' ]
     args: [ 'push', 'gcr.io/$PROJECT_ID/cms-api' ]
   - id: 'Deploy to k8s'
+    timeout: 900s
     waitFor: [ 'Push Image to the Registry' ]
     name: 'gcr.io/cloud-builders/gke-deploy'
     args:
@@ -27,4 +28,4 @@ steps:
       - --cluster=cms-k8s-cluster
 options:
   logging: GCS_ONLY
-timeout: 1800s
+timeout: 2400s
