@@ -16,8 +16,8 @@ import { UserRoles } from '../../src/constants';
 const studentInput = {
   first_name: 'Mary',
   last_name: 'Miles',
-  email: 'mary@email.com',
-  password: '123456789',
+  email: 'marymm@email.com',
+  password: 'SomePassword1',
   birth_date: '01.01.1990',
   is_active: true,
 };

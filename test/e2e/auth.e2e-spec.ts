@@ -17,7 +17,7 @@ const dataToCreateAdmin = {
   first_name: 'Bob',
   last_name: 'Doe',
   email: 'bob@email.com',
-  password: '123456789',
+  password: 'SomePassword1',
   is_active: true,
 };
 const userLoginData = {
