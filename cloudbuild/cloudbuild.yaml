@@ -23,7 +23,7 @@ steps:
       - run
       - --filename=k8s/
       - --image=gcr.io/$PROJECT_ID/cms-api:latest
-      - --location=us-central1
+      - --location=us-central1-c
       - --cluster=cms-k8s-cluster
 options:
   logging: GCS_ONLY
