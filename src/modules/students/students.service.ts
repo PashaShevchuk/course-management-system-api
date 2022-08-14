@@ -95,7 +95,7 @@ export class StudentsService {
 
   async getStudentByParams(params: {
     [key: string]: any;
-  }): Promise<Student | undefined> {
+  }): Promise<Student | null> {
     this.logger.log(`${this.LOGGER_PREFIX} get student by params`);
 
     return await this.studentRepository.findOne({ where: { ...params } });
