@@ -71,7 +71,7 @@ spec:
             - name: PREFIX_PATH
               value: "api"
             - name: SYNCHRONIZE
-              value: "false"
+              value: "true"
             - name: PRIVATE_KEY
               valueFrom:
                 secretKeyRef:

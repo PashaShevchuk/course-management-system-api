@@ -14,7 +14,7 @@ const REQUIRED_VARS = [
   'POSTGRES_DATABASE',
 ];
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+// eslint-disable-next-line
 require('dotenv').config();
 
 @Injectable()
