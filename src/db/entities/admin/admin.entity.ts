@@ -23,6 +23,7 @@ export class Admin {
   })
   last_name: string;
 
+	// TODO: it's possible to use email RegExp?
   @ApiProperty()
   @Column({
     unique: true,

@@ -15,6 +15,7 @@ import { LessonsModule } from '../lessons/lessons.module';
   providers: [AuthService],
   imports: [
     JwtModule.register({
+      // TODO: you should get these configs from ConfigService
       privateKey: process.env.PRIVATE_KEY || 'SECRET',
       signOptions: {
         expiresIn: process.env.AUTH_TOKEN_EXPIRED_TIME || '12h',

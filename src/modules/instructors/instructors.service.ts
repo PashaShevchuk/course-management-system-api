@@ -106,9 +106,11 @@ export class InstructorsService {
   }): Promise<Instructor | undefined> {
     this.logger.log(`${this.LOGGER_PREFIX} get instructor by params`);
 
+    // TODO: Does it not have to throw the 404 error if data is not found?
     return await this.instructorRepository.findOne({ where: { ...params } });
   }
 
+  // TODO: please rename it because it is almost the same as "getInstructorByParams". It can be "getManyInstructorsByParams"
   async getInstructorsByParams(params: {
     [key: string]: any;
   }): Promise<Instructor[]> {
@@ -167,6 +169,7 @@ export class InstructorsService {
   ): Promise<Instructor> {
     this.logger.log(`${this.LOGGER_PREFIX} update instructor is_active status`);
 
+    // TODO: you should use a transaction to rollback the status
     await this.instructorRepository.update(id, {
       is_active: statusDto.is_active,
     });
@@ -216,6 +219,7 @@ export class InstructorsService {
     this.logger.log(`${this.LOGGER_PREFIX} get all instructors`);
 
     const instructors = await this.instructorRepository.find();
+    // TODO: you should throw the 404 http error
 
     return instructors;
   }

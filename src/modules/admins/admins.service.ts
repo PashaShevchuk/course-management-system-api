@@ -73,6 +73,7 @@ export class AdminsService {
   ): Promise<Admin> {
     this.logger.log(`${this.LOGGER_PREFIX} create admin by admin`);
 
+    // TODO: You can create a method to check a user and throw an error if it exists
     const candidate = await this.getAdminByParams({
       email: createAdminByAdminDto.email,
     });
@@ -145,6 +146,7 @@ export class AdminsService {
     const admin = await this.getAdminById(adminId);
     await this.authService.declineToken(adminId);
 
+    // TODO: the config isEmailEnable should be in the class MailService
     if (statusDto.send_email && this.configService.isEmailEnable()) {
       await this.mailService.sendMail(
         admin.email,
@@ -187,6 +189,7 @@ export class AdminsService {
     this.logger.log(`${this.LOGGER_PREFIX} delete admin by ID`);
 
     const result = await this.adminRepository.delete(id);
+    // TODO: you should decline a token of this user
 
     if (!result.affected) {
       throw new HttpException('Data not found', HttpStatus.NOT_FOUND);
@@ -229,6 +232,7 @@ export class AdminsService {
     });
 
     if (!homework) {
+      // TODO: you should create a util to check data and send some custom error message `${element} is not found`
       throw new HttpException('Data not found', HttpStatus.NOT_FOUND);
     }
 

@@ -10,6 +10,7 @@ RUN npm ci --only=production
 
 COPY . .
 
+# TODO: the port number should be got from the config file
 ARG PORT=3000
 ENV PORT=$PORT
 EXPOSE $PORT

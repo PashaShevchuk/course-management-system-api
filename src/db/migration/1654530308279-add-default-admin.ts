@@ -1,5 +1,8 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
+// TODO: it should be a seed
+// TODO: the role "admin" should be taken from the enum UserRoles
+// TODO: the ID should be in "const id = '...';" to not copy-paste the string
 export class addDefaultAdmin1654530308279 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`

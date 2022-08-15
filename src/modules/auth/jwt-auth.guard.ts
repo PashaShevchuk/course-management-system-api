@@ -20,6 +20,7 @@ export class JwtAuthGuard implements CanActivate {
     const req = context.switchToHttp().getRequest();
 
     try {
+      // TODO: if you use Bearer you can use the same login as in "io-evloop-npp-api-authorization" -> getAccessTokenFromHeader
       const authHeader = req.headers.authorization;
 
       const bearer = authHeader.split(' ')[0];

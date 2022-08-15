@@ -235,6 +235,7 @@ export class StudentsService {
         where: { student: { id: studentId } },
       });
 
+      // TODO: "5" must be a constant to reuse it in an error message
       if (studentCourses[1] > 5) {
         throw new HttpException(
           'You cannot attend more than 5 courses at the same time',

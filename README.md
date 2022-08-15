@@ -85,7 +85,7 @@ $ npm run migration:run
 
 ## API documentation
 
-The API documentation was created using [Swagger](https://swagger.io/). To generate the latest API documentation from
+The API documentation has been created created using [Swagger](https://swagger.io/). To see the API documentation from
 source code yourself, you need to run the application and follow the
 link: \
 http://api-host/api/docs \

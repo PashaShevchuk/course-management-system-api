@@ -73,6 +73,7 @@ export class CoursesService {
       where: { course: { id: courseId } },
     });
 
+    // TODO: count = 5 - should be a property to reuse it in an error message
     if (!lessons.length || count < 5) {
       throw new HttpException(
         'You cannot publish a course that has less than 5 lessons',
@@ -134,7 +135,7 @@ export class CoursesService {
         );
       }
 
-      throw err;
+      throw err; // TODO: you should an HTTP error
     }
   }
 

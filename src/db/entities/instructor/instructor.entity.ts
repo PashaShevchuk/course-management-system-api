@@ -25,6 +25,7 @@ export class Instructor {
   })
   last_name: string;
 
+  // TODO: it's possible to use email RegExp?
   @ApiProperty()
   @Column({
     unique: true,
@@ -45,7 +46,7 @@ export class Instructor {
     length: 255,
     nullable: false,
   })
-  position: string;
+  position: string; // TODO: should it be from the constant?
 
   @ApiProperty()
   @Column({

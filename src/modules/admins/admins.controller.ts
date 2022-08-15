@@ -33,6 +33,7 @@ import { homeworkExampleDto } from './dto/homework-example.dto';
 @UseInterceptors(ClassSerializerInterceptor)
 export class AdminsController {
   private LOGGER_PREFIX = '[AdminsController]:';
+  // TODO: can you create it once and import into each file?
   private logger = new Logger();
 
   constructor(private readonly adminsService: AdminsService) {}

@@ -91,6 +91,8 @@ export class ConfigService {
     };
   }
 
+	// TODO: you should have 1 config file and use it in a project
+	// TODO: You don't have the auth config in this file
   public getTokenPrivateKey(): string {
     return this.getValue('PRIVATE_KEY');
   }
