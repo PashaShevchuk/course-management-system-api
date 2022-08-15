@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import dataSource from './config/ormconfig';
 
 async function bootstrap() {
   const port = process.env.PORT || 3000;
@@ -37,9 +38,12 @@ async function bootstrap() {
     }),
   );
 
-  await app.listen(port, () =>
-    console.log(`The server is listening on the port ${port}`),
-  );
+  await app.listen(port, async () => {
+    console.log(`The server is listening on the port ${port}`);
+
+    await dataSource.initialize();
+    await dataSource.runMigrations();
+  });
 }
 
 bootstrap();

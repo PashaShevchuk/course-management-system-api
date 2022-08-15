@@ -335,7 +335,7 @@ export class InstructorsService {
   async getCourseFeedbacks(
     instructorId: string,
     courseId: string,
-  ): Promise<any> {
+  ): Promise<CourseFeedback[]> {
     this.logger.log(`${this.LOGGER_PREFIX} get instructor course feedbacks`);
 
     const instructorCourse = await this.instructorCourseRepository.findOne({

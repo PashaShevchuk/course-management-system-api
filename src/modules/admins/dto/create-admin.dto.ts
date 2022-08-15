@@ -1,5 +1,6 @@
-import { IsEmail, IsNotEmpty, MinLength } from 'class-validator';
+import { IsEmail, IsNotEmpty, Matches, MinLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { PASSWORD_REGEX } from '../../../constants';
 
 export class CreateAdminDto {
   @ApiProperty()
@@ -18,5 +19,9 @@ export class CreateAdminDto {
   @ApiProperty()
   @IsNotEmpty()
   @MinLength(8)
+  @Matches(PASSWORD_REGEX, {
+    message:
+      'Password must contain at least one upper case English letter, one lower case English letter, one digit, and a minimum of eight in length',
+  })
   password: string;
 }

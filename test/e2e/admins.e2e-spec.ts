@@ -17,7 +17,7 @@ const adminInput = {
   first_name: 'John',
   last_name: 'Doe',
   email: 'john.doe@email.com',
-  password: '123456789',
+  password: 'SomePassword1',
   is_active: true,
 };
 const verifiedUser = {
