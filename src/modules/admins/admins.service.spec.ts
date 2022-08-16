@@ -317,9 +317,12 @@ describe('AdminsService', () => {
     it('should delete admin by id', async () => {
       adminRepository.delete.mockResolvedValue({ raw: [], affected: 1 });
 
+      const declineTokenSpy = jest.spyOn(mockedAuthService, 'declineToken');
+
       await adminService.deleteAdminById(adminIdMock);
 
       expect(adminRepository.delete).toHaveBeenCalledWith(adminIdMock);
+      expect(declineTokenSpy).toHaveBeenCalledWith(adminIdMock);
     });
 
     it('should throw an error', async () => {

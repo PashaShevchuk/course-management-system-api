@@ -228,6 +228,8 @@ export class InstructorsService {
     if (!result.affected) {
       throw new HttpException('Data not found', HttpStatus.NOT_FOUND);
     }
+
+    await this.authService.declineToken(id);
   }
 
   async getInstructorCourses(instructorId: string): Promise<Course[]> {

@@ -406,9 +406,12 @@ describe('StudentsService', () => {
     it('should delete student by id', async () => {
       studentRepository.delete.mockResolvedValue({ raw: [], affected: 1 });
 
+      const declineTokenSpy = jest.spyOn(mockedAuthService, 'declineToken');
+
       await studentsService.deleteStudentById(studentIdMock);
 
       expect(studentRepository.delete).toHaveBeenCalledWith(studentIdMock);
+      expect(declineTokenSpy).toHaveBeenCalledWith(studentIdMock);
     });
 
     it('should throw an error', async () => {

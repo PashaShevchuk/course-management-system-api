@@ -225,6 +225,8 @@ export class StudentsService {
     if (!result.affected) {
       throw new HttpException('Data not found', HttpStatus.NOT_FOUND);
     }
+
+    await this.authService.declineToken(id);
   }
 
   async takeCourse(studentId: string, courseId: string) {

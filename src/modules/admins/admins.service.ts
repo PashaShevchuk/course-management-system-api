@@ -191,6 +191,8 @@ export class AdminsService {
     if (!result.affected) {
       throw new HttpException('Data not found', HttpStatus.NOT_FOUND);
     }
+
+    await this.authService.declineToken(id);
   }
 
   async getHomeworks(): Promise<Homework[]> {
