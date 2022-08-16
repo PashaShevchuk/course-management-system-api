@@ -10,7 +10,7 @@ import { MailService } from '../mail/mail.service';
 import { Student } from '../../db/entities/student/student.entity';
 import { StudentCourse } from '../../db/entities/student-course/student-course.entity';
 import { Lesson } from '../../db/entities/lesson/lesson.entity';
-import { EmailTemplates, UserRoles } from '../../constants';
+import { EmailTemplates, MAX_COURSES_NUMBER, UserRoles } from '../../constants';
 import { CourseFeedback } from '../../db/entities/course-feedback/course-feedback.entity';
 import { Homework } from '../../db/entities/homework/homework.entity';
 import { StorageService } from '../storage/storage.service';
@@ -23,13 +23,17 @@ const mockRepository = () => ({
   save: jest.fn(),
   update: jest.fn(),
   delete: jest.fn(),
+  createQueryBuilder: jest.fn(() => ({
+    update: jest.fn().mockReturnThis(),
+    set: jest.fn().mockReturnThis(),
+    where: jest.fn().mockReturnThis(),
+    andWhere: jest.fn().mockReturnThis(),
+    execute: jest.fn().mockReturnThis(),
+  })),
 });
 const mockedAuthService = {
   hashPassword: jest.fn(() => Promise.resolve(hashMock)),
   declineToken: jest.fn(() => Promise.resolve()),
-};
-const mockedConfigService = {
-  isEmailEnable: jest.fn(() => true),
 };
 const mockedMailService = {
   sendMail: jest.fn(() => Promise.resolve()),
@@ -187,7 +191,7 @@ describe('StudentsService', () => {
         },
         {
           provide: ConfigService,
-          useValue: mockedConfigService,
+          useValue: {},
         },
         {
           provide: MailService,
@@ -308,30 +312,38 @@ describe('StudentsService', () => {
         send_email: true,
       };
 
-      studentRepository.update.mockResolvedValue({
-        generatedMaps: [],
-        raw: [],
-        affected: 1,
-      });
-      studentRepository.findOne.mockResolvedValue(studentDataMock);
-
+      const queryRunnerConnectSpy = jest.spyOn(mockedQueryRunner, 'connect');
+      const queryRunnerStartTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'startTransaction',
+      );
+      const queryRunnerCommitTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'commitTransaction',
+      );
+      const queryRunnerRollbackTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'rollbackTransaction',
+      );
+      const queryRunnerReleaseSpy = jest.spyOn(mockedQueryRunner, 'release');
+      const studentRepositoryQueryBuilderSpy = jest.spyOn(
+        studentRepository,
+        'createQueryBuilder',
+      );
       const declineTokenSpy = jest.spyOn(mockedAuthService, 'declineToken');
-      const isEmailEnableSpy = jest.spyOn(mockedConfigService, 'isEmailEnable');
       const sendMailSpy = jest.spyOn(mockedMailService, 'sendMail');
+
+      studentRepository.findOne.mockResolvedValue(studentDataMock);
 
       const result = await studentsService.updateStatus(
         studentIdMock,
         updateStatusData,
       );
 
-      expect(studentRepository.update).toHaveBeenCalledWith(studentIdMock, {
-        is_active: updateStatusData.is_active,
-      });
       expect(studentRepository.findOne).toHaveBeenCalledWith({
         where: { id: studentIdMock },
       });
       expect(declineTokenSpy).toHaveBeenCalledWith(studentIdMock);
-      expect(isEmailEnableSpy).toHaveBeenCalled();
       expect(sendMailSpy).toHaveBeenCalledWith(
         studentDataMock.email,
         EmailTemplates.CHANGE_STATUS,
@@ -341,6 +353,12 @@ describe('StudentsService', () => {
           status: updateStatusData.is_active,
         },
       );
+      expect(queryRunnerConnectSpy).toHaveBeenCalled();
+      expect(queryRunnerStartTransactionSpy).toHaveBeenCalled();
+      expect(studentRepositoryQueryBuilderSpy).toHaveBeenCalled();
+      expect(queryRunnerCommitTransactionSpy).toHaveBeenCalled();
+      expect(queryRunnerRollbackTransactionSpy).not.toHaveBeenCalled();
+      expect(queryRunnerReleaseSpy).toHaveBeenCalled();
       expect(result).toBe(studentDataMock);
     });
   });
@@ -411,9 +429,12 @@ describe('StudentsService', () => {
     it('should delete student by id', async () => {
       studentRepository.delete.mockResolvedValue({ raw: [], affected: 1 });
 
+      const declineTokenSpy = jest.spyOn(mockedAuthService, 'declineToken');
+
       await studentsService.deleteStudentById(studentIdMock);
 
       expect(studentRepository.delete).toHaveBeenCalledWith(studentIdMock);
+      expect(declineTokenSpy).toHaveBeenCalledWith(studentIdMock);
     });
 
     it('should throw an error', async () => {
@@ -426,8 +447,11 @@ describe('StudentsService', () => {
   });
 
   describe('takeCourse', () => {
-    it('should delete student by id', async () => {
-      studentCourseRepository.findAndCount.mockResolvedValue([[], 3]);
+    it('should assign a student to a course', async () => {
+      studentCourseRepository.findAndCount.mockResolvedValue([
+        [],
+        MAX_COURSES_NUMBER,
+      ]);
       studentCourseRepository.save.mockResolvedValue(studentDataMock);
 
       await studentsService.takeCourse(studentIdMock, courseIdMock);
@@ -441,9 +465,9 @@ describe('StudentsService', () => {
       });
     });
 
-    it('should throw an error if student has more than 5 courses', async () => {
+    it('should throw an error if student has more courses than maximum courses number', async () => {
       const studentCoursesError = new HttpException(
-        'You cannot attend more than 5 courses at the same time',
+        `You cannot attend more than ${MAX_COURSES_NUMBER} courses at the same time`,
         HttpStatus.BAD_REQUEST,
       );
 
@@ -459,7 +483,10 @@ describe('StudentsService', () => {
     });
 
     it('should throw an error if student has already taken a course', async () => {
-      studentCourseRepository.findAndCount.mockResolvedValue([[], 3]);
+      studentCourseRepository.findAndCount.mockResolvedValue([
+        [],
+        MAX_COURSES_NUMBER,
+      ]);
       studentCourseRepository.save.mockRejectedValue({ code: '23505' });
 
       try {
@@ -482,7 +509,10 @@ describe('StudentsService', () => {
     });
 
     it('should throw an error if a course in not found', async () => {
-      studentCourseRepository.findAndCount.mockResolvedValue([[], 3]);
+      studentCourseRepository.findAndCount.mockResolvedValue([
+        [],
+        MAX_COURSES_NUMBER,
+      ]);
       studentCourseRepository.save.mockRejectedValue({ code: '23503' });
 
       try {

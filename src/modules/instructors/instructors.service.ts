@@ -167,25 +167,46 @@ export class InstructorsService {
   ): Promise<Instructor> {
     this.logger.log(`${this.LOGGER_PREFIX} update instructor is_active status`);
 
-    await this.instructorRepository.update(id, {
-      is_active: statusDto.is_active,
-    });
     const instructor = await this.getInstructorById(id);
-    await this.authService.declineToken(id);
 
-    if (statusDto.send_email && this.configService.isEmailEnable()) {
-      await this.mailService.sendMail(
-        instructor.email,
-        EmailTemplates.CHANGE_STATUS,
-        'Account status',
-        {
-          name: `${instructor.first_name} ${instructor.last_name}`,
-          status: statusDto.is_active,
-        },
-      );
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      await this.instructorRepository
+        .createQueryBuilder('instructor', queryRunner)
+        .update()
+        .set({ is_active: statusDto.is_active })
+        .where('id = :id', { id })
+        .execute();
+
+      if (statusDto.send_email) {
+        await this.mailService.sendMail(
+          instructor.email,
+          EmailTemplates.CHANGE_STATUS,
+          'Account status',
+          {
+            name: `${instructor.first_name} ${instructor.last_name}`,
+            status: statusDto.is_active,
+          },
+        );
+      }
+
+      await this.authService.declineToken(id);
+
+      await queryRunner.commitTransaction();
+
+      instructor.is_active = statusDto.is_active;
+
+      return instructor;
+    } catch (err) {
+      await queryRunner.rollbackTransaction();
+
+      throw err;
+    } finally {
+      await queryRunner.release();
     }
-
-    return instructor;
   }
 
   async updateInstructor(
@@ -228,6 +249,8 @@ export class InstructorsService {
     if (!result.affected) {
       throw new HttpException('Data not found', HttpStatus.NOT_FOUND);
     }
+
+    await this.authService.declineToken(id);
   }
 
   async getInstructorCourses(instructorId: string): Promise<Course[]> {
@@ -725,7 +748,8 @@ export class InstructorsService {
           SELECT sm."studentId", SUM(l.highest_mark) as highest_mark_sum, SUM(sm.mark) as mark_sum
           FROM lesson as l
                    INNER JOIN student_mark sm on l.id = sm."lessonId"
-          WHERE "courseId" = $1 AND "studentId" = $2
+          WHERE "courseId" = $1
+            AND "studentId" = $2
           GROUP BY sm."studentId";
       `,
       [

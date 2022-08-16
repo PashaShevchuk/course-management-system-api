@@ -139,25 +139,46 @@ export class AdminsService {
   ): Promise<Admin> {
     this.logger.log(`${this.LOGGER_PREFIX} update admin is_active status`);
 
-    await this.adminRepository.update(adminId, {
-      is_active: statusDto.is_active,
-    });
     const admin = await this.getAdminById(adminId);
-    await this.authService.declineToken(adminId);
 
-    if (statusDto.send_email && this.configService.isEmailEnable()) {
-      await this.mailService.sendMail(
-        admin.email,
-        EmailTemplates.CHANGE_STATUS,
-        'Account status',
-        {
-          name: `${admin.first_name} ${admin.last_name}`,
-          status: statusDto.is_active,
-        },
-      );
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      await this.adminRepository
+        .createQueryBuilder('admin', queryRunner)
+        .update()
+        .set({ is_active: statusDto.is_active })
+        .where('id = :id', { id: adminId })
+        .execute();
+
+      if (statusDto.send_email) {
+        await this.mailService.sendMail(
+          admin.email,
+          EmailTemplates.CHANGE_STATUS,
+          'Account status',
+          {
+            name: `${admin.first_name} ${admin.last_name}`,
+            status: statusDto.is_active,
+          },
+        );
+      }
+
+      await this.authService.declineToken(adminId);
+
+      await queryRunner.commitTransaction();
+
+      admin.is_active = statusDto.is_active;
+
+      return admin;
+    } catch (err) {
+      await queryRunner.rollbackTransaction();
+
+      throw err;
+    } finally {
+      await queryRunner.release();
     }
-
-    return admin;
   }
 
   async updateAdmin(
@@ -191,6 +212,8 @@ export class AdminsService {
     if (!result.affected) {
       throw new HttpException('Data not found', HttpStatus.NOT_FOUND);
     }
+
+    await this.authService.declineToken(id);
   }
 
   async getHomeworks(): Promise<Homework[]> {

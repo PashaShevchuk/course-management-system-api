@@ -8,6 +8,7 @@ import { CreateCourseDto } from './dto/create-course.dto';
 import { AssignInstructorDto } from './dto/assign-instructor.dto';
 import { InstructorsService } from '../instructors/instructors.service';
 import { GetCoursesByParamsDto } from './dto/get-courses-by-params.dto';
+import { MIN_LESSONS_NUMBER } from '../../constants';
 
 @Injectable()
 export class CoursesService {
@@ -73,9 +74,9 @@ export class CoursesService {
       where: { course: { id: courseId } },
     });
 
-    if (!lessons.length || count < 5) {
+    if (!lessons.length || count < MIN_LESSONS_NUMBER) {
       throw new HttpException(
-        'You cannot publish a course that has less than 5 lessons',
+        `You cannot publish a course that has less than ${MIN_LESSONS_NUMBER} lessons`,
         HttpStatus.BAD_REQUEST,
       );
     }

@@ -17,13 +17,17 @@ const mockRepository = () => ({
   save: jest.fn(),
   update: jest.fn(),
   delete: jest.fn(),
+  createQueryBuilder: jest.fn(() => ({
+    update: jest.fn().mockReturnThis(),
+    set: jest.fn().mockReturnThis(),
+    where: jest.fn().mockReturnThis(),
+    andWhere: jest.fn().mockReturnThis(),
+    execute: jest.fn().mockReturnThis(),
+  })),
 });
 const mockedAuthService = {
   hashPassword: jest.fn(() => Promise.resolve(hashMock)),
   declineToken: jest.fn(() => Promise.resolve()),
-};
-const mockedConfigService = {
-  isEmailEnable: jest.fn(() => true),
 };
 const mockedMailService = {
   sendMail: jest.fn(() => Promise.resolve()),
@@ -111,7 +115,7 @@ describe('AdminsService', () => {
         },
         {
           provide: ConfigService,
-          useValue: mockedConfigService,
+          useValue: {},
         },
         {
           provide: MailService,
@@ -252,15 +256,27 @@ describe('AdminsService', () => {
         send_email: true,
       };
 
-      adminRepository.update.mockResolvedValue({
-        generatedMaps: [],
-        raw: [],
-        affected: 1,
-      });
       adminRepository.findOne.mockResolvedValue(adminDataMock);
 
+      const queryRunnerConnectSpy = jest.spyOn(mockedQueryRunner, 'connect');
+      const queryRunnerStartTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'startTransaction',
+      );
+      const queryRunnerCommitTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'commitTransaction',
+      );
+      const queryRunnerRollbackTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'rollbackTransaction',
+      );
+      const queryRunnerReleaseSpy = jest.spyOn(mockedQueryRunner, 'release');
+      const adminRepositoryQueryBuilderSpy = jest.spyOn(
+        adminRepository,
+        'createQueryBuilder',
+      );
       const declineTokenSpy = jest.spyOn(mockedAuthService, 'declineToken');
-      const isEmailEnableSpy = jest.spyOn(mockedConfigService, 'isEmailEnable');
       const sendMailSpy = jest.spyOn(mockedMailService, 'sendMail');
 
       const result = await adminService.updateStatus(
@@ -268,14 +284,10 @@ describe('AdminsService', () => {
         updateStatusData,
       );
 
-      expect(adminRepository.update).toHaveBeenCalledWith(adminIdMock, {
-        is_active: updateStatusData.is_active,
-      });
       expect(adminRepository.findOne).toHaveBeenCalledWith({
         where: { id: adminIdMock },
       });
       expect(declineTokenSpy).toHaveBeenCalledWith(adminIdMock);
-      expect(isEmailEnableSpy).toHaveBeenCalled();
       expect(sendMailSpy).toHaveBeenCalledWith(
         adminDataMock.email,
         EmailTemplates.CHANGE_STATUS,
@@ -285,6 +297,12 @@ describe('AdminsService', () => {
           status: updateStatusData.is_active,
         },
       );
+      expect(queryRunnerConnectSpy).toHaveBeenCalled();
+      expect(queryRunnerStartTransactionSpy).toHaveBeenCalled();
+      expect(adminRepositoryQueryBuilderSpy).toHaveBeenCalled();
+      expect(queryRunnerCommitTransactionSpy).toHaveBeenCalled();
+      expect(queryRunnerRollbackTransactionSpy).not.toHaveBeenCalled();
+      expect(queryRunnerReleaseSpy).toHaveBeenCalled();
       expect(result).toBe(adminDataMock);
     });
   });
@@ -322,9 +340,12 @@ describe('AdminsService', () => {
     it('should delete admin by id', async () => {
       adminRepository.delete.mockResolvedValue({ raw: [], affected: 1 });
 
+      const declineTokenSpy = jest.spyOn(mockedAuthService, 'declineToken');
+
       await adminService.deleteAdminById(adminIdMock);
 
       expect(adminRepository.delete).toHaveBeenCalledWith(adminIdMock);
+      expect(declineTokenSpy).toHaveBeenCalledWith(adminIdMock);
     });
 
     it('should throw an error', async () => {

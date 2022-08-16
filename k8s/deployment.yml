@@ -117,16 +117,6 @@ spec:
                 configMapKeyRef:
                   name: api-config-map
                   key: HW_BUCKET
-            - name: FILE_SIZE
-              valueFrom:
-                secretKeyRef:
-                  name: api-secrets
-                  key: FILE_SIZE
-            - name: FILES_QTY
-              valueFrom:
-                secretKeyRef:
-                  name: api-secrets
-                  key: FILES_QTY
         - name: cloudsql-proxy
           image: gcr.io/cloudsql-docker/gce-proxy:1.31.1
           command:

@@ -35,9 +35,6 @@ const mockedAuthService = {
   hashPassword: jest.fn(() => Promise.resolve(hashMock)),
   declineToken: jest.fn(() => Promise.resolve()),
 };
-const mockedConfigService = {
-  isEmailEnable: jest.fn(() => true),
-};
 const mockedMailService = {
   sendMail: jest.fn(() => Promise.resolve()),
 };
@@ -240,7 +237,7 @@ describe('InstructorsService', () => {
         },
         {
           provide: ConfigService,
-          useValue: mockedConfigService,
+          useValue: {},
         },
         {
           provide: MailService,
@@ -383,15 +380,28 @@ describe('InstructorsService', () => {
         send_email: true,
       };
 
-      instructorRepository.update.mockResolvedValue({
-        generatedMaps: [],
-        raw: [],
-        affected: 1,
-      });
+      const queryRunnerConnectSpy = jest.spyOn(mockedQueryRunner, 'connect');
+      const queryRunnerStartTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'startTransaction',
+      );
+      const queryRunnerCommitTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'commitTransaction',
+      );
+      const queryRunnerRollbackTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'rollbackTransaction',
+      );
+      const queryRunnerReleaseSpy = jest.spyOn(mockedQueryRunner, 'release');
+      const instructorRepositoryQueryBuilderSpy = jest.spyOn(
+        instructorRepository,
+        'createQueryBuilder',
+      );
+
       instructorRepository.findOne.mockResolvedValue(instructorDataMock);
 
       const declineTokenSpy = jest.spyOn(mockedAuthService, 'declineToken');
-      const isEmailEnableSpy = jest.spyOn(mockedConfigService, 'isEmailEnable');
       const sendMailSpy = jest.spyOn(mockedMailService, 'sendMail');
 
       const result = await instructorsService.updateStatus(
@@ -399,17 +409,10 @@ describe('InstructorsService', () => {
         updateStatusData,
       );
 
-      expect(instructorRepository.update).toHaveBeenCalledWith(
-        instructorIdMock,
-        {
-          is_active: updateStatusData.is_active,
-        },
-      );
       expect(instructorRepository.findOne).toHaveBeenCalledWith({
         where: { id: instructorIdMock },
       });
       expect(declineTokenSpy).toHaveBeenCalledWith(instructorIdMock);
-      expect(isEmailEnableSpy).toHaveBeenCalled();
       expect(sendMailSpy).toHaveBeenCalledWith(
         instructorDataMock.email,
         EmailTemplates.CHANGE_STATUS,
@@ -419,6 +422,12 @@ describe('InstructorsService', () => {
           status: updateStatusData.is_active,
         },
       );
+      expect(queryRunnerConnectSpy).toHaveBeenCalled();
+      expect(queryRunnerStartTransactionSpy).toHaveBeenCalled();
+      expect(instructorRepositoryQueryBuilderSpy).toHaveBeenCalled();
+      expect(queryRunnerCommitTransactionSpy).toHaveBeenCalled();
+      expect(queryRunnerRollbackTransactionSpy).not.toHaveBeenCalled();
+      expect(queryRunnerReleaseSpy).toHaveBeenCalled();
       expect(result).toBe(instructorDataMock);
     });
   });
@@ -468,11 +477,14 @@ describe('InstructorsService', () => {
     it('should delete instructor by id', async () => {
       instructorRepository.delete.mockResolvedValue({ raw: [], affected: 1 });
 
+      const declineTokenSpy = jest.spyOn(mockedAuthService, 'declineToken');
+
       await instructorsService.deleteInstructorById(instructorIdMock);
 
       expect(instructorRepository.delete).toHaveBeenCalledWith(
         instructorIdMock,
       );
+      expect(declineTokenSpy).toHaveBeenCalledWith(instructorIdMock);
     });
 
     it('should throw an error', async () => {
