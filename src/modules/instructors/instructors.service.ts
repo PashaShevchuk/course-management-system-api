@@ -173,7 +173,7 @@ export class InstructorsService {
     const instructor = await this.getInstructorById(id);
     await this.authService.declineToken(id);
 
-    if (statusDto.send_email && this.configService.isEmailEnable()) {
+    if (statusDto.send_email) {
       await this.mailService.sendMail(
         instructor.email,
         EmailTemplates.CHANGE_STATUS,

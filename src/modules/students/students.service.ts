@@ -155,7 +155,7 @@ export class StudentsService {
     const student = await this.getStudentById(id);
     await this.authService.declineToken(id);
 
-    if (statusDto.send_email && this.configService.isEmailEnable()) {
+    if (statusDto.send_email) {
       await this.mailService.sendMail(
         student.email,
         EmailTemplates.CHANGE_STATUS,

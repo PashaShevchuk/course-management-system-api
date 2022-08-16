@@ -35,9 +35,6 @@ const mockedAuthService = {
   hashPassword: jest.fn(() => Promise.resolve(hashMock)),
   declineToken: jest.fn(() => Promise.resolve()),
 };
-const mockedConfigService = {
-  isEmailEnable: jest.fn(() => true),
-};
 const mockedMailService = {
   sendMail: jest.fn(() => Promise.resolve()),
 };
@@ -240,7 +237,7 @@ describe('InstructorsService', () => {
         },
         {
           provide: ConfigService,
-          useValue: mockedConfigService,
+          useValue: {},
         },
         {
           provide: MailService,
@@ -391,7 +388,6 @@ describe('InstructorsService', () => {
       instructorRepository.findOne.mockResolvedValue(instructorDataMock);
 
       const declineTokenSpy = jest.spyOn(mockedAuthService, 'declineToken');
-      const isEmailEnableSpy = jest.spyOn(mockedConfigService, 'isEmailEnable');
       const sendMailSpy = jest.spyOn(mockedMailService, 'sendMail');
 
       const result = await instructorsService.updateStatus(
@@ -409,7 +405,6 @@ describe('InstructorsService', () => {
         where: { id: instructorIdMock },
       });
       expect(declineTokenSpy).toHaveBeenCalledWith(instructorIdMock);
-      expect(isEmailEnableSpy).toHaveBeenCalled();
       expect(sendMailSpy).toHaveBeenCalledWith(
         instructorDataMock.email,
         EmailTemplates.CHANGE_STATUS,

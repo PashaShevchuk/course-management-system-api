@@ -22,9 +22,6 @@ const mockedAuthService = {
   hashPassword: jest.fn(() => Promise.resolve(hashMock)),
   declineToken: jest.fn(() => Promise.resolve()),
 };
-const mockedConfigService = {
-  isEmailEnable: jest.fn(() => true),
-};
 const mockedMailService = {
   sendMail: jest.fn(() => Promise.resolve()),
 };
@@ -111,7 +108,7 @@ describe('AdminsService', () => {
         },
         {
           provide: ConfigService,
-          useValue: mockedConfigService,
+          useValue: {},
         },
         {
           provide: MailService,
@@ -260,7 +257,6 @@ describe('AdminsService', () => {
       adminRepository.findOne.mockResolvedValue(adminDataMock);
 
       const declineTokenSpy = jest.spyOn(mockedAuthService, 'declineToken');
-      const isEmailEnableSpy = jest.spyOn(mockedConfigService, 'isEmailEnable');
       const sendMailSpy = jest.spyOn(mockedMailService, 'sendMail');
 
       const result = await adminService.updateStatus(
@@ -275,7 +271,6 @@ describe('AdminsService', () => {
         where: { id: adminIdMock },
       });
       expect(declineTokenSpy).toHaveBeenCalledWith(adminIdMock);
-      expect(isEmailEnableSpy).toHaveBeenCalled();
       expect(sendMailSpy).toHaveBeenCalledWith(
         adminDataMock.email,
         EmailTemplates.CHANGE_STATUS,

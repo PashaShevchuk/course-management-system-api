@@ -145,7 +145,7 @@ export class AdminsService {
     const admin = await this.getAdminById(adminId);
     await this.authService.declineToken(adminId);
 
-    if (statusDto.send_email && this.configService.isEmailEnable()) {
+    if (statusDto.send_email) {
       await this.mailService.sendMail(
         admin.email,
         EmailTemplates.CHANGE_STATUS,
