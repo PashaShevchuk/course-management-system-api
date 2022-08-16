@@ -149,25 +149,46 @@ export class StudentsService {
   ): Promise<Student> {
     this.logger.log(`${this.LOGGER_PREFIX} update student is_active status`);
 
-    await this.studentRepository.update(id, {
-      is_active: statusDto.is_active,
-    });
     const student = await this.getStudentById(id);
-    await this.authService.declineToken(id);
 
-    if (statusDto.send_email) {
-      await this.mailService.sendMail(
-        student.email,
-        EmailTemplates.CHANGE_STATUS,
-        'Account status',
-        {
-          name: `${student.first_name} ${student.last_name}`,
-          status: statusDto.is_active,
-        },
-      );
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      await this.studentRepository
+        .createQueryBuilder('student', queryRunner)
+        .update()
+        .set({ is_active: statusDto.is_active })
+        .where('id = :id', { id })
+        .execute();
+
+      if (statusDto.send_email) {
+        await this.mailService.sendMail(
+          student.email,
+          EmailTemplates.CHANGE_STATUS,
+          'Account status',
+          {
+            name: `${student.first_name} ${student.last_name}`,
+            status: statusDto.is_active,
+          },
+        );
+      }
+
+      await this.authService.declineToken(id);
+
+      await queryRunner.commitTransaction();
+
+      student.is_active = statusDto.is_active;
+
+      return student;
+    } catch (err) {
+      await queryRunner.rollbackTransaction();
+
+      throw err;
+    } finally {
+      await queryRunner.release();
     }
-
-    return student;
   }
 
   async getStudentById(id: string): Promise<Student> {

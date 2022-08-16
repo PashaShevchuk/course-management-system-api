@@ -23,6 +23,13 @@ const mockRepository = () => ({
   save: jest.fn(),
   update: jest.fn(),
   delete: jest.fn(),
+  createQueryBuilder: jest.fn(() => ({
+    update: jest.fn().mockReturnThis(),
+    set: jest.fn().mockReturnThis(),
+    where: jest.fn().mockReturnThis(),
+    andWhere: jest.fn().mockReturnThis(),
+    execute: jest.fn().mockReturnThis(),
+  })),
 });
 const mockedAuthService = {
   hashPassword: jest.fn(() => Promise.resolve(hashMock)),
@@ -305,24 +312,34 @@ describe('StudentsService', () => {
         send_email: true,
       };
 
-      studentRepository.update.mockResolvedValue({
-        generatedMaps: [],
-        raw: [],
-        affected: 1,
-      });
-      studentRepository.findOne.mockResolvedValue(studentDataMock);
-
+      const queryRunnerConnectSpy = jest.spyOn(mockedQueryRunner, 'connect');
+      const queryRunnerStartTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'startTransaction',
+      );
+      const queryRunnerCommitTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'commitTransaction',
+      );
+      const queryRunnerRollbackTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'rollbackTransaction',
+      );
+      const queryRunnerReleaseSpy = jest.spyOn(mockedQueryRunner, 'release');
+      const studentRepositoryQueryBuilderSpy = jest.spyOn(
+        studentRepository,
+        'createQueryBuilder',
+      );
       const declineTokenSpy = jest.spyOn(mockedAuthService, 'declineToken');
       const sendMailSpy = jest.spyOn(mockedMailService, 'sendMail');
+
+      studentRepository.findOne.mockResolvedValue(studentDataMock);
 
       const result = await studentsService.updateStatus(
         studentIdMock,
         updateStatusData,
       );
 
-      expect(studentRepository.update).toHaveBeenCalledWith(studentIdMock, {
-        is_active: updateStatusData.is_active,
-      });
       expect(studentRepository.findOne).toHaveBeenCalledWith({
         where: { id: studentIdMock },
       });
@@ -336,6 +353,12 @@ describe('StudentsService', () => {
           status: updateStatusData.is_active,
         },
       );
+      expect(queryRunnerConnectSpy).toHaveBeenCalled();
+      expect(queryRunnerStartTransactionSpy).toHaveBeenCalled();
+      expect(studentRepositoryQueryBuilderSpy).toHaveBeenCalled();
+      expect(queryRunnerCommitTransactionSpy).toHaveBeenCalled();
+      expect(queryRunnerRollbackTransactionSpy).not.toHaveBeenCalled();
+      expect(queryRunnerReleaseSpy).toHaveBeenCalled();
       expect(result).toBe(studentDataMock);
     });
   });

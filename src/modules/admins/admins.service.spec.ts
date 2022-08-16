@@ -17,6 +17,13 @@ const mockRepository = () => ({
   save: jest.fn(),
   update: jest.fn(),
   delete: jest.fn(),
+  createQueryBuilder: jest.fn(() => ({
+    update: jest.fn().mockReturnThis(),
+    set: jest.fn().mockReturnThis(),
+    where: jest.fn().mockReturnThis(),
+    andWhere: jest.fn().mockReturnThis(),
+    execute: jest.fn().mockReturnThis(),
+  })),
 });
 const mockedAuthService = {
   hashPassword: jest.fn(() => Promise.resolve(hashMock)),
@@ -249,13 +256,26 @@ describe('AdminsService', () => {
         send_email: true,
       };
 
-      adminRepository.update.mockResolvedValue({
-        generatedMaps: [],
-        raw: [],
-        affected: 1,
-      });
       adminRepository.findOne.mockResolvedValue(adminDataMock);
 
+      const queryRunnerConnectSpy = jest.spyOn(mockedQueryRunner, 'connect');
+      const queryRunnerStartTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'startTransaction',
+      );
+      const queryRunnerCommitTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'commitTransaction',
+      );
+      const queryRunnerRollbackTransactionSpy = jest.spyOn(
+        mockedQueryRunner,
+        'rollbackTransaction',
+      );
+      const queryRunnerReleaseSpy = jest.spyOn(mockedQueryRunner, 'release');
+      const adminRepositoryQueryBuilderSpy = jest.spyOn(
+        adminRepository,
+        'createQueryBuilder',
+      );
       const declineTokenSpy = jest.spyOn(mockedAuthService, 'declineToken');
       const sendMailSpy = jest.spyOn(mockedMailService, 'sendMail');
 
@@ -264,9 +284,6 @@ describe('AdminsService', () => {
         updateStatusData,
       );
 
-      expect(adminRepository.update).toHaveBeenCalledWith(adminIdMock, {
-        is_active: updateStatusData.is_active,
-      });
       expect(adminRepository.findOne).toHaveBeenCalledWith({
         where: { id: adminIdMock },
       });
@@ -280,6 +297,12 @@ describe('AdminsService', () => {
           status: updateStatusData.is_active,
         },
       );
+      expect(queryRunnerConnectSpy).toHaveBeenCalled();
+      expect(queryRunnerStartTransactionSpy).toHaveBeenCalled();
+      expect(adminRepositoryQueryBuilderSpy).toHaveBeenCalled();
+      expect(queryRunnerCommitTransactionSpy).toHaveBeenCalled();
+      expect(queryRunnerRollbackTransactionSpy).not.toHaveBeenCalled();
+      expect(queryRunnerReleaseSpy).toHaveBeenCalled();
       expect(result).toBe(adminDataMock);
     });
   });
