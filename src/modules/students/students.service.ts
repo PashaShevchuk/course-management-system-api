@@ -16,7 +16,7 @@ import { AuthService } from '../auth/auth.service';
 import { ConfigService } from '../../config/config.service';
 import { MailService } from '../mail/mail.service';
 import { Student } from '../../db/entities/student/student.entity';
-import { EmailTemplates, UserRoles } from '../../constants';
+import { EmailTemplates, MAX_COURSES_NUMBER, UserRoles } from '../../constants';
 import { CreateStudentByAdminDto } from './dto/create-student-by-admin.dto';
 import { CreateStudentDto } from './dto/create-student.dto';
 import { UpdateStudentStatusDto } from './dto/update-student-status.dto';
@@ -235,9 +235,9 @@ export class StudentsService {
         where: { student: { id: studentId } },
       });
 
-      if (studentCourses[1] > 5) {
+      if (studentCourses[1] > MAX_COURSES_NUMBER) {
         throw new HttpException(
-          'You cannot attend more than 5 courses at the same time',
+          `You cannot attend more than ${MAX_COURSES_NUMBER} courses at the same time`,
           HttpStatus.BAD_REQUEST,
         );
       }

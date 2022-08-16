@@ -6,7 +6,7 @@ import { InstructorCourse } from '../../db/entities/instructor-course/instructor
 import { Lesson } from '../../db/entities/lesson/lesson.entity';
 import { InstructorsService } from '../instructors/instructors.service';
 import { HttpException, HttpStatus } from '@nestjs/common';
-import { UserRoles } from '../../constants';
+import { MIN_LESSONS_NUMBER, UserRoles } from '../../constants';
 
 const mockRepository = () => ({
   find: jest.fn(),
@@ -143,7 +143,7 @@ describe('CoursesService', () => {
         ...courseDataMock,
         is_published: false,
       };
-      const lessonsWithCountDataMock = [[lessonMockData], 5];
+      const lessonsWithCountDataMock = [[lessonMockData], MIN_LESSONS_NUMBER];
 
       courseRepository.findOne.mockResolvedValue(notPublishedCourseDataMock);
       instructorCourseRepository.findOne.mockResolvedValue(
@@ -212,14 +212,14 @@ describe('CoursesService', () => {
       expect(courseRepository.save).not.toHaveBeenCalled();
     });
 
-    it('should throw an error if a course has less than 5 lessons', async () => {
+    it('should throw an error if a course has less lessons than minimum lessons number', async () => {
       const notPublishedCourseDataMock = {
         ...courseDataMock,
         is_published: false,
       };
       const lessonsWithCountDataMock = [[lessonMockData], 0];
       const errorMock = new HttpException(
-        'You cannot publish a course that has less than 5 lessons',
+        `You cannot publish a course that has less than ${MIN_LESSONS_NUMBER} lessons`,
         HttpStatus.BAD_REQUEST,
       );
 

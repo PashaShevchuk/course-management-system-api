@@ -10,7 +10,7 @@ import { MailService } from '../mail/mail.service';
 import { Student } from '../../db/entities/student/student.entity';
 import { StudentCourse } from '../../db/entities/student-course/student-course.entity';
 import { Lesson } from '../../db/entities/lesson/lesson.entity';
-import { EmailTemplates, UserRoles } from '../../constants';
+import { EmailTemplates, MAX_COURSES_NUMBER, UserRoles } from '../../constants';
 import { CourseFeedback } from '../../db/entities/course-feedback/course-feedback.entity';
 import { Homework } from '../../db/entities/homework/homework.entity';
 import { StorageService } from '../storage/storage.service';
@@ -421,8 +421,11 @@ describe('StudentsService', () => {
   });
 
   describe('takeCourse', () => {
-    it('should delete student by id', async () => {
-      studentCourseRepository.findAndCount.mockResolvedValue([[], 3]);
+    it('should assign a student to a course', async () => {
+      studentCourseRepository.findAndCount.mockResolvedValue([
+        [],
+        MAX_COURSES_NUMBER,
+      ]);
       studentCourseRepository.save.mockResolvedValue(studentDataMock);
 
       await studentsService.takeCourse(studentIdMock, courseIdMock);
@@ -436,9 +439,9 @@ describe('StudentsService', () => {
       });
     });
 
-    it('should throw an error if student has more than 5 courses', async () => {
+    it('should throw an error if student has more courses than maximum courses number', async () => {
       const studentCoursesError = new HttpException(
-        'You cannot attend more than 5 courses at the same time',
+        `You cannot attend more than ${MAX_COURSES_NUMBER} courses at the same time`,
         HttpStatus.BAD_REQUEST,
       );
 
@@ -454,7 +457,10 @@ describe('StudentsService', () => {
     });
 
     it('should throw an error if student has already taken a course', async () => {
-      studentCourseRepository.findAndCount.mockResolvedValue([[], 3]);
+      studentCourseRepository.findAndCount.mockResolvedValue([
+        [],
+        MAX_COURSES_NUMBER,
+      ]);
       studentCourseRepository.save.mockRejectedValue({ code: '23505' });
 
       try {
@@ -477,7 +483,10 @@ describe('StudentsService', () => {
     });
 
     it('should throw an error if a course in not found', async () => {
-      studentCourseRepository.findAndCount.mockResolvedValue([[], 3]);
+      studentCourseRepository.findAndCount.mockResolvedValue([
+        [],
+        MAX_COURSES_NUMBER,
+      ]);
       studentCourseRepository.save.mockRejectedValue({ code: '23503' });
 
       try {

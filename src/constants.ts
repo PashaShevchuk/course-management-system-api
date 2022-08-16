@@ -25,3 +25,6 @@ export const PASSWORD_REGEX = /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9]).{8,256}$/;
 
 export const FILE_SIZE_LIMIT = 5 * 1024 * 1024; // 5 mb
 export const FILES_QTY_LIMIT = 1;
+
+export const MIN_LESSONS_NUMBER = 5;
+export const MAX_COURSES_NUMBER = 5;
